@@ -2,7 +2,7 @@ const MODEL = "llama-3.3-70b-versatile";
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return resp(405, { error: "Método no permitido" });
-  const key = process.env.GROQ_API_KEY;
+  const key = (process.env.GROQ_API_KEY || "").trim();
   if (!key) return resp(500, { error: "Falta configurar GROQ_API_KEY en Netlify." });
 
   let messages;
@@ -28,11 +28,14 @@ exports.handler = async (event) => {
       })
     });
     if (r.status === 429) return resp(429, { error: "Cironix está recibiendo muchos mensajes. Probá de nuevo en un minuto." });
-    if (!r.ok) return resp(502, { error: "El modelo no respondió. Probá de nuevo." });
+    if (!r.ok) {
+      const detail = await r.text();
+      return resp(502, { error: "Groq respondió " + r.status + ": " + detail.slice(0, 200) });
+    }
     const data = await r.json();
     return resp(200, { reply: data.choices?.[0]?.message?.content || "" });
-  } catch {
-    return resp(502, { error: "No se pudo conectar con el modelo." });
+  } catch (e) {
+    return resp(502, { error: "No se pudo conectar con el modelo: " + String(e).slice(0, 150) });
   }
 };
 
