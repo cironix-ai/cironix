@@ -85,6 +85,9 @@
   .acct .nm { font-size:.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .acct .em { font-size:.76rem; color:var(--mute); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .note.err { color:var(--err); }
+  .legal { margin:6px 0 0; padding:0 10px; font-size:.78rem; color:var(--mute); }
+  .legal a { color:inherit; text-underline-offset:3px; }
+  .legal a:hover { color:var(--text); }
 
   /* Zona principal */
   .main { flex:1; min-width:0; height:100%; }
@@ -203,6 +206,7 @@
       <div class="account" id="account" hidden></div>
       <p class="note" id="note" role="status">El historial se guarda solo en este navegador.</p>
       <button type="button" class="clear" id="clear" hidden>Borrar todo el historial</button>
+      <p class="legal"><a href="/privacidad">Privacidad</a> y <a href="/terminosycondiciones">términos</a></p>
     </div>
   </aside>
   <div class="backdrop" id="backdrop"></div>
