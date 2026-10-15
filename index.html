@@ -190,7 +190,7 @@
   .bottom { padding:6px 20px calc(14px + env(safe-area-inset-bottom, 0px)); }
   .box {
     display:flex; align-items:flex-end; gap:8px; background:var(--surface);
-    border:1px solid var(--line); border-radius:26px; padding:7px 7px 7px 20px;
+    border:1px solid var(--line); border-radius:26px; padding:7px 7px 7px 8px;
     transition:border-color .15s, box-shadow .15s;
   }
   .box:focus-within { border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,94,255,.28); }
@@ -207,6 +207,14 @@
   .go:active:not(:disabled) { transform:scale(.94); }
   .go:disabled { background:#1E1E22; color:#5A5A62; cursor:default; }
   .go svg { width:20px; height:20px; }
+  .imgbtn { flex:none; width:42px; height:42px; border:0; border-radius:50%; cursor:pointer; background:transparent; color:var(--mute); display:grid; place-items:center; transition:color .15s, background .15s; }
+  .imgbtn:hover { color:#fff; background:#1A1A1E; }
+  .imgbtn svg { width:21px; height:21px; }
+  .pic { margin:0; max-width:420px; }
+  .pic img { display:block; width:100%; height:auto; border-radius:14px; border:1px solid var(--line); background:var(--code); }
+  .pic figcaption { margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; color:var(--mute); font-size:.85rem; }
+  .pic a { color:#5B9DFF; text-underline-offset:3px; }
+  .imgnote { color:var(--mute); font-style:italic; }
   .fine { margin:10px 0 0; text-align:center; color:var(--mute); font-size:.78rem; }
 
   button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
@@ -307,12 +315,16 @@
             <button type="button" class="start" data-fill="Ayudame a escribir un mensaje para ">Escribir un mensaje</button>
             <button type="button" class="start" data-fill="Dame ideas para ">Pedir ideas</button>
             <button type="button" class="start" data-fill="Traducí al inglés: ">Traducir un texto</button>
+            <button type="button" class="start" data-fill="/imagen ">Crear una imagen</button>
           </div>
         </section>
       </main>
 
       <footer class="bottom">
         <form class="box" id="f">
+          <button type="button" class="imgbtn" id="imgbtn" aria-label="Crear una imagen" title="Crear una imagen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.7"/><path d="M21 16l-5-5-8 8"/></svg>
+          </button>
           <textarea id="t" rows="1" maxlength="2000" placeholder="Escribí tu mensaje" aria-label="Mensaje"></textarea>
           <button class="go" id="s" type="submit" aria-label="Enviar mensaje" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
@@ -715,7 +727,11 @@
   function showWelcome() { log.textContent = ""; log.appendChild(welcomeTpl.cloneNode(true)); }
   function renderMessages(msgs) {
     log.style.scrollBehavior = "auto"; log.textContent = "";
-    msgs.forEach(function (m) { if (m.role === "user") addUser(m.content); else botRow(false).body.innerHTML = md(m.content); });
+    msgs.forEach(function (m) {
+      if (m.role === "user") addUser(m.content);
+      else if (m.content.indexOf(IMG_TAG) === 0) { const b = botRow(false).body; b.className = "reply imgnote"; b.textContent = "Imagen: " + m.content.slice(IMG_TAG.length).replace(/\]\s*$/, "").trim() + " (las imágenes no se guardan en el historial)"; }
+      else botRow(false).body.innerHTML = md(m.content);
+    });
     toBottom(); log.style.scrollBehavior = "";
   }
 
@@ -761,6 +777,47 @@
   function grow() { t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 160) + "px"; }
   function setBusy(v) { busy = v; document.body.classList.toggle("busy", v); syncSend(); }
 
+  const IMG_TAG = "[Imagen generada:";
+  const IMG_RE = /^\/imagen(?:\s+([\s\S]+))?$/i;
+  async function askImage(prompt, retry) {
+    if (busy) return;
+    setNote(null); setBusy(true);
+    const w = log.querySelector(".welcome"); if (w) w.remove();
+    if (!currentId) currentId = uid();
+    if (!retry) addUser("/imagen " + prompt);
+    history.push({ role: "user", content: "Quiero una imagen de: " + prompt });
+    const bot = addBot(); bot.body.textContent = "Creando tu imagen…";
+    let ok = false;
+    try {
+      const r = await fetch("/.netlify/functions/image", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: prompt })
+      });
+      let data; try { data = await r.json(); } catch (e) { data = {}; }
+      if (!r.ok) throw new Error(data.error || "No se pudo crear la imagen. Probá de nuevo.");
+      if (!data.image) throw new Error("No llegó ninguna imagen. Probá de nuevo.");
+      const src = "data:image/jpeg;base64," + data.image;
+      const fig = document.createElement("figure"); fig.className = "pic";
+      const im = document.createElement("img"); im.src = src; im.alt = prompt; im.width = 1024; im.height = 1024;
+      const cap = document.createElement("figcaption");
+      const dl = document.createElement("a"); dl.href = src; dl.download = "cironix.jpg"; dl.textContent = "Descargar";
+      const note = document.createElement("span"); note.textContent = "Las imágenes no se guardan en el historial.";
+      cap.appendChild(dl); cap.appendChild(note); fig.appendChild(im); fig.appendChild(cap);
+      bot.body.className = "reply"; bot.body.textContent = ""; bot.body.appendChild(fig);
+      history.push({ role: "assistant", content: IMG_TAG + " " + prompt.slice(0, 200) + "]" });
+      ok = true;
+    } catch (err) {
+      history.pop();
+      bot.body.className = "reply fail";
+      bot.body.textContent = err instanceof TypeError ? "No hay conexión. Revisá tu internet y probá de nuevo." : err.message;
+      const btn = document.createElement("button"); btn.type = "button"; btn.className = "retry"; btn.textContent = "Probar de nuevo";
+      btn.addEventListener("click", function () { bot.row.remove(); askImage(prompt, true); });
+      bot.body.appendChild(document.createElement("br")); bot.body.appendChild(btn);
+    }
+    bot.row.classList.remove("thinking");
+    if (ok) { try { await saveCurrent(); } catch (e) { setNote("No se pudo guardar esta conversación.", true); } }
+    setBusy(false); toBottom(); t.focus();
+  }
+
   async function ask(text, retry) {
     if (busy || !text) return;
     setBusy(true);
@@ -793,7 +850,20 @@
     setBusy(false); toBottom(); t.focus();
   }
 
-  function submit() { const text = t.value.trim(); if (!text) return; t.value = ""; grow(); ask(text, false); }
+  function submit() {
+    const text = t.value.trim(); if (!text) return;
+    const m = text.match(IMG_RE);
+    if (m) {
+      const p = (m[1] || "").trim();
+      if (p.length < 3) { setNote("Escribí qué imagen querés después de /imagen.", true); return; }
+      t.value = ""; grow(); askImage(p, false); return;
+    }
+    t.value = ""; grow(); ask(text, false);
+  }
+  document.getElementById("imgbtn").addEventListener("click", function () {
+    if (!/^\/imagen\s/i.test(t.value)) t.value = "/imagen " + t.value;
+    grow(); syncSend(); t.focus(); t.setSelectionRange(t.value.length, t.value.length);
+  });
   form.addEventListener("submit", function (e) { e.preventDefault(); submit(); });
   t.addEventListener("input", function () { grow(); syncSend(); });
   t.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); submit(); } });
