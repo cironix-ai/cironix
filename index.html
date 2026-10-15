@@ -215,6 +215,26 @@
   .pic figcaption { margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; color:var(--mute); font-size:.85rem; }
   .pic a { color:#5B9DFF; text-underline-offset:3px; }
   .imgnote { color:var(--mute); font-style:italic; }
+  .newchat.on { background:var(--hover); border-color:#34343A; }
+  .gallery { display:none; flex:1; min-height:0; overflow-y:auto; padding:24px 20px 28px; scrollbar-width:thin; scrollbar-color:#2A2A2F transparent; }
+  body[data-pane="images"] .gallery { display:block; }
+  body[data-pane="images"] .log { display:none; }
+  .ghead h2 { margin:0 0 4px; font-weight:500; font-size:1.5rem; letter-spacing:-.02em; }
+  .ghead p { margin:0 0 18px; color:var(--mute); font-size:.92rem; }
+  .ggrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+  .tile { padding:0; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--code); cursor:pointer; aspect-ratio:1; display:block; }
+  .tile:hover { border-color:#3A3A40; }
+  .tile img { width:100%; height:100%; object-fit:cover; display:block; }
+  .gempty { color:var(--mute); margin:28px 0; }
+  dialog#lightbox { background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:18px; padding:14px; width:min(92vw, 640px); max-height:92dvh; overflow:auto; }
+  dialog#lightbox::backdrop { background:rgba(0,0,0,.78); }
+  #lb-img { display:block; width:100%; height:auto; border-radius:12px; background:var(--code); }
+  #lb-cap { margin:12px 2px 12px; color:#D2D2D6; overflow-wrap:anywhere; font-size:.95rem; }
+  .lb-actions { display:flex; flex-wrap:wrap; gap:8px; }
+  .lb-actions button { padding:8px 16px; border-radius:999px; border:1px solid var(--line); background:transparent; cursor:pointer; font-size:.9rem; }
+  .lb-actions button:hover { background:var(--hover); }
+  .lb-actions .danger { color:var(--err); }
+  .glink { background:none; border:0; padding:0; color:#5B9DFF; font:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
   .fine { margin:10px 0 0; text-align:center; color:var(--mute); font-size:.78rem; }
 
   button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
@@ -239,7 +259,7 @@
   }
 </style>
 </head>
-<body data-view="boot">
+<body data-view="boot" data-pane="chat">
 <div id="boot" aria-label="Cargando"></div>
 <section id="gate" aria-labelledby="gate-title">
   <div class="gate-card">
@@ -283,6 +303,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
       Nuevo chat
     </button>
+    <button type="button" class="newchat" id="galbtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.7"/><path d="M21 16l-5-5-8 8"/></svg>
+      Imágenes
+    </button>
     <ul class="list" id="list"></ul>
     <div class="foot">
       <div class="account" id="account" hidden></div>
@@ -292,6 +316,15 @@
     </div>
   </aside>
   <div class="backdrop" id="backdrop"></div>
+  <dialog id="lightbox" aria-label="Imagen">
+    <img id="lb-img" alt="">
+    <p id="lb-cap"></p>
+    <div class="lb-actions">
+      <button type="button" id="lb-dl">Descargar</button>
+      <button type="button" id="lb-del" class="danger">Borrar</button>
+      <button type="button" id="lb-close">Cerrar</button>
+    </div>
+  </dialog>
 
   <div class="main">
     <div class="shell">
@@ -309,16 +342,22 @@
         <section class="welcome" id="welcome">
           <div id="big"></div>
           <h1>¿En qué te ayudo?</h1>
-          <p>Respondo en tu idioma. Es gratis.</p>
+          <p>Respondo en tu idioma y también creo imágenes. Es gratis.</p>
           <div class="starts">
             <button type="button" class="start" data-fill="Explicame con palabras simples: ">Explicar algo con palabras simples</button>
             <button type="button" class="start" data-fill="Ayudame a escribir un mensaje para ">Escribir un mensaje</button>
             <button type="button" class="start" data-fill="Dame ideas para ">Pedir ideas</button>
             <button type="button" class="start" data-fill="Traducí al inglés: ">Traducir un texto</button>
-            <button type="button" class="start" data-fill="/imagen ">Crear una imagen</button>
+            <button type="button" class="start" data-fill="Creá una imagen de ">Crear una imagen</button>
           </div>
         </section>
       </main>
+
+      <section class="gallery" id="gallery" aria-label="Imágenes">
+        <div class="ghead"><h2>Imágenes</h2><p id="gcount"></p></div>
+        <div class="ggrid" id="ggrid"></div>
+        <p class="gempty" id="gempty" hidden>Todavía no creaste ninguna imagen. Escribí “creá una imagen de…” en el chat.</p>
+      </section>
 
       <footer class="bottom">
         <form class="box" id="f">
@@ -652,7 +691,7 @@
     try { await sb.auth.signOut(); } catch (e) { setGateNote("No se pudo cerrar la sesión. Probá de nuevo.", true); }
   }
 
-  function resetChat() { currentId = null; history.length = 0; showWelcome(); }
+  function resetChat() { currentId = null; history.length = 0; gallery = []; setPane("chat"); showWelcome(); }
   async function enterApp() {
     setNote("Sincronizando…");
     let msg = null;
@@ -729,7 +768,7 @@
     log.style.scrollBehavior = "auto"; log.textContent = "";
     msgs.forEach(function (m) {
       if (m.role === "user") addUser(m.content);
-      else if (m.content.indexOf(IMG_TAG) === 0) { const b = botRow(false).body; b.className = "reply imgnote"; b.textContent = "Imagen: " + m.content.slice(IMG_TAG.length).replace(/\]\s*$/, "").trim() + " (las imágenes no se guardan en el historial)"; }
+      else if (m.content.indexOf(IMG_TAG) === 0) { const b = botRow(false).body; b.className = "reply imgnote"; b.textContent = "Imagen: " + m.content.slice(IMG_TAG.length).replace(/\]\s*$/, "").trim() + " (la imagen está en la sección Imágenes)"; }
       else botRow(false).body.innerHTML = md(m.content);
     });
     toBottom(); log.style.scrollBehavior = "";
@@ -740,12 +779,14 @@
 
   function newChat() {
     if (busy) return;
+    setPane("chat");
     currentId = null; history.length = 0; showWelcome(); closeSide(); renderList();
     t.value = ""; grow(); syncSend();
     if (window.matchMedia("(min-width:821px)").matches) t.focus();
   }
   async function openChat(id) {
     if (busy) return;
+    setPane("chat");
     let msgs;
     if (user && sb) {
       const r = await sb.from("chats").select("messages").eq("id", id).maybeSingle();
@@ -777,15 +818,116 @@
   function grow() { t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 160) + "px"; }
   function setBusy(v) { busy = v; document.body.classList.toggle("busy", v); syncSend(); }
 
+  /* ---- Galería de imágenes ---- */
+  const galBtn = document.getElementById("galbtn"), galEl = document.getElementById("gallery"), gGrid = document.getElementById("ggrid"),
+        gCount = document.getElementById("gcount"), gEmpty = document.getElementById("gempty"), lb = document.getElementById("lightbox"),
+        lbImg = document.getElementById("lb-img"), lbCap = document.getElementById("lb-cap");
+  let gallery = [], galLoading = false, lbItem = null;
+
+  function setPane(p) { document.body.setAttribute("data-pane", p); galBtn.classList.toggle("on", p === "images"); }
+  function renderGallery(msg) {
+    gGrid.textContent = "";
+    gallery.forEach(function (it) {
+      if (!it.url) return;
+      const b = document.createElement("button"); b.type = "button"; b.className = "tile"; b.setAttribute("aria-label", "Abrir imagen: " + it.prompt);
+      const im = document.createElement("img"); im.src = it.url; im.alt = it.prompt; im.loading = "lazy";
+      b.appendChild(im); b.addEventListener("click", function () { openLightbox(it); }); gGrid.appendChild(b);
+    });
+    const n = gallery.length;
+    gEmpty.hidden = n > 0 || !!msg;
+    gCount.textContent = msg || (n ? n + (n === 1 ? " imagen" : " imágenes") + (user ? "" : " (hasta que cierres la página)") : "");
+  }
+  async function loadGallery() {
+    if (!(user && sb)) { renderGallery(); return; }
+    if (galLoading) return;
+    galLoading = true; if (!gallery.length) renderGallery("Cargando…");
+    try {
+      const r = await sb.from("images").select("id,prompt,path,created_at").order("created_at", { ascending: false }).limit(100);
+      if (r.error) { renderGallery("No se pudieron cargar tus imágenes. Revisá tu conexión."); return; }
+      const rows = r.data || [], urls = {};
+      if (rows.length) {
+        const sgn = await sb.storage.from("images").createSignedUrls(rows.map(function (x) { return x.path; }), 3600);
+        (sgn.data || []).forEach(function (x) { if (x.signedUrl) urls[x.path] = x.signedUrl; });
+      }
+      gallery = rows.map(function (x) { return { id: x.id, prompt: x.prompt, path: x.path, url: urls[x.path] || "", created: x.created_at }; });
+      renderGallery();
+    } catch (e) { renderGallery("No se pudieron cargar tus imágenes. Revisá tu conexión."); }
+    finally { galLoading = false; }
+  }
+  function openGallery() {
+    if (busy) return;
+    closeSide(); setPane("images"); renderGallery(); loadGallery();
+  }
+  async function saveImage(prompt, b64) {
+    const src = "data:image/jpeg;base64," + b64;
+    if (!(user && sb)) { gallery.unshift({ id: uid(), prompt: prompt, path: "", url: src }); return { ok: true }; }
+    try {
+      const bytes = Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); });
+      const path = user.id + "/" + uid() + ".jpg";
+      const up = await sb.storage.from("images").upload(path, new Blob([bytes], { type: "image/jpeg" }), { contentType: "image/jpeg" });
+      if (up.error) return { error: "No se pudo guardar la imagen en tu cuenta." };
+      const ins = await sb.from("images").insert({ prompt: prompt.slice(0, 500), path: path }).select("id,created_at").single();
+      if (ins.error) {
+        try { await sb.storage.from("images").remove([path]); } catch (e) {}
+        return { error: /image_limit_reached/.test(ins.error.message || "") ? "Llegaste al límite de 100 imágenes. Borrá alguna en Imágenes para guardar más." : "No se pudo guardar la imagen en tu cuenta." };
+      }
+      gallery.unshift({ id: ins.data.id, prompt: prompt, path: path, url: src, created: ins.data.created_at });
+      return { ok: true };
+    } catch (e) { return { error: "No se pudo guardar la imagen en tu cuenta." }; }
+  }
+  function openLightbox(it) {
+    lbItem = it; lbImg.src = it.url; lbImg.alt = it.prompt; lbCap.textContent = it.prompt;
+    if (lb.showModal) lb.showModal(); else lb.setAttribute("open", "");
+  }
+  function closeLightbox() { if (lb.close) lb.close(); else lb.removeAttribute("open"); lbItem = null; }
+  async function downloadImage(it) {
+    try {
+      const r = await fetch(it.url); const blob = await r.blob(); const u = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = u; a.download = "cironix.jpg"; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(u); }, 4000);
+    } catch (e) { window.open(it.url, "_blank", "noopener"); }
+  }
+  async function deleteImage(it) {
+    if (!confirm("¿Borrar esta imagen?")) return;
+    if (user && sb && it.path) {
+      const r = await sb.from("images").delete().eq("id", it.id);
+      if (r.error) { setNote("No se pudo borrar la imagen.", true); return; }
+      try { await sb.storage.from("images").remove([it.path]); } catch (e) {}
+    }
+    gallery = gallery.filter(function (x) { return x !== it; });
+    closeLightbox(); renderGallery();
+  }
+  galBtn.addEventListener("click", openGallery);
+  document.getElementById("lb-close").addEventListener("click", closeLightbox);
+  document.getElementById("lb-dl").addEventListener("click", function () { if (lbItem) downloadImage(lbItem); });
+  document.getElementById("lb-del").addEventListener("click", function () { if (lbItem) deleteImage(lbItem); });
+  lb.addEventListener("click", function (e) { if (e.target === lb) closeLightbox(); });
+
+  /* ---- Pedidos de imagen en lenguaje natural ---- */
+  const NL_VERB = /(?:\bcre[aá](?:r|me|melo|mela)?|\bgener[aá](?:r|me|melo|mela)?|\bhac[eé](?:r|me|melo|mela)?|\bhaz(?:me)?|\bdibuj[aá](?:r|me|melo|mela)?|\bdise[nñ][aá](?:r|me|melo|mela)?|\bilustr[aá](?:r|me)?|\barm[aá](?:r|me)?|\bquiero|\bnecesito|\bmake|\bcreate|\bgenerate|\bdraw)(?![\wáéíóúñ])/i;
+  const NL_NOUN = /\b(?:imagen|imágen|foto|fotograf[ií]a|ilustraci[oó]n|dibujo|logo|logotipo|p[oó]ster|retrato|wallpaper|fondo de pantalla|image|picture|photo|illustration)\b/i;
+  function parseImageRequest(text) {
+    const x = text.trim();
+    if (x.length > 600 || /^(?:¿|c[oó]mo\b|qu[eé]\b|por qu[eé]\b|cu[aá]l\b)/i.test(x)) return null;
+    const d = x.match(/^(?:dibuj[aá]me|dibuj[aá]|dibuja)\s+([\s\S]{3,})$/i);
+    if (d) return d[1].trim();
+    const v = x.match(NL_VERB), n = x.match(NL_NOUN);
+    if (!v || !n || v.index > n.index || n.index > 70) return null;
+    let rest = x.slice(n.index + n[0].length).replace(/^[\s:,.-]+/, "").replace(/[?!.\s]+$/, "").trim();
+    const m = rest.match(/^(?:de|del|sobre|of)\s+([\s\S]+)$/i);
+    if (m) rest = m[1].trim(); else if (rest) rest = n[0] + " " + rest;
+    return rest.length >= 3 ? rest : null;
+  }
+
   const IMG_TAG = "[Imagen generada:";
   const IMG_RE = /^\/imagen(?:\s+([\s\S]+))?$/i;
   async function askImage(prompt, retry) {
     if (busy) return;
-    setNote(null); setBusy(true);
+    setPane("chat"); setNote(null); setBusy(true);
     const w = log.querySelector(".welcome"); if (w) w.remove();
     if (!currentId) currentId = uid();
     if (!retry) addUser("/imagen " + prompt);
-    history.push({ role: "user", content: "Quiero una imagen de: " + prompt });
+    history.push({ role: "user", content: "Imagen: " + prompt });
     const bot = addBot(); bot.body.textContent = "Creando tu imagen…";
     let ok = false;
     try {
@@ -800,8 +942,14 @@
       const im = document.createElement("img"); im.src = src; im.alt = prompt; im.width = 1024; im.height = 1024;
       const cap = document.createElement("figcaption");
       const dl = document.createElement("a"); dl.href = src; dl.download = "cironix.jpg"; dl.textContent = "Descargar";
-      const note = document.createElement("span"); note.textContent = "Las imágenes no se guardan en el historial.";
-      cap.appendChild(dl); cap.appendChild(note); fig.appendChild(im); fig.appendChild(cap);
+      cap.appendChild(dl);
+      const saved = await saveImage(prompt, data.image);
+      if (saved.ok) {
+        const all = document.createElement("button"); all.type = "button"; all.className = "glink"; all.textContent = "Ver en Imágenes";
+        all.addEventListener("click", openGallery); cap.appendChild(all);
+        if (!user) { const g = document.createElement("span"); g.textContent = "Sin cuenta, dura hasta que cierres la página."; cap.appendChild(g); }
+      } else { const e = document.createElement("span"); e.textContent = saved.error; cap.appendChild(e); }
+      fig.appendChild(im); fig.appendChild(cap);
       bot.body.className = "reply"; bot.body.textContent = ""; bot.body.appendChild(fig);
       history.push({ role: "assistant", content: IMG_TAG + " " + prompt.slice(0, 200) + "]" });
       ok = true;
@@ -820,6 +968,7 @@
 
   async function ask(text, retry) {
     if (busy || !text) return;
+    setPane("chat");
     setBusy(true);
     const w = log.querySelector(".welcome"); if (w) w.remove();
     if (!currentId) currentId = uid();
@@ -858,6 +1007,8 @@
       if (p.length < 3) { setNote("Escribí qué imagen querés después de /imagen.", true); return; }
       t.value = ""; grow(); askImage(p, false); return;
     }
+    const nl = parseImageRequest(text);
+    if (nl) { t.value = ""; grow(); askImage(nl, false); return; }
     t.value = ""; grow(); ask(text, false);
   }
   document.getElementById("imgbtn").addEventListener("click", function () {
