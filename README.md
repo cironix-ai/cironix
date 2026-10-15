@@ -1,0 +1,1 @@
+cironix puede crear imagenes
