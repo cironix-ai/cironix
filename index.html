@@ -92,8 +92,8 @@
   /* Pantalla de entrada */
   #boot, #gate { position:fixed; inset:0; z-index:60; background:var(--bg); display:none; }
   body[data-view="boot"] #boot { display:grid; place-items:center; }
-  body[data-view="gate"] #gate, body[data-view="consent"] #gate { display:flex; overflow-y:auto; padding:24px 20px; }
-  body[data-view="boot"] .app, body[data-view="gate"] .app, body[data-view="consent"] .app { display:none; }
+  body[data-view="gate"] #gate, body[data-view="consent"] #gate, body[data-view="reset"] #gate { display:flex; overflow-y:auto; padding:24px 20px; }
+  body[data-view="boot"] .app, body[data-view="gate"] .app, body[data-view="consent"] .app, body[data-view="reset"] .app { display:none; }
   #boot img { width:56px; height:56px; display:block; animation:pulse 1.3s ease-in-out infinite; }
   .gate-card { width:100%; max-width:380px; margin:auto; display:flex; flex-direction:column; text-align:center; }
   .gate-card .big { width:84px; height:84px; display:block; margin:0 auto 26px; }
@@ -109,6 +109,15 @@
   .gate-or { margin:22px 0 16px; display:flex; align-items:center; gap:12px; color:var(--mute); font-size:.85rem; }
   .gate-or::before, .gate-or::after { content:""; flex:1; height:1px; background:var(--line, #242428); }
   .gate-or[hidden], #gate-login[hidden] { display:none; }
+  .fld { width:100%; height:46px; margin:0 0 10px; padding:0 14px; border-radius:12px; border:1px solid #2A2A2F; background:#0B0B0D; color:#ECECEE; font:inherit; font-size:16px; outline:none; }
+  .fld:focus { border-color:#5B9DFF; }
+  .fld::placeholder { color:#6B6B73; }
+  .gbtn.alt { background:#1A1A1E; color:#ECECEE; border:1px solid #2A2A2F; }
+  .gbtn.alt:hover { background:#222227; }
+  .gate-links { display:flex; flex-direction:column; align-items:center; gap:2px; margin-top:8px; }
+  .lnk { background:none; border:0; padding:6px; color:var(--mute); font:inherit; font-size:.88rem; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+  .lnk:hover { color:#fff; }
+  .lnk[hidden] { display:none; }
   .accept strong { font-weight:500; color:#fff; }
   .gate-or { margin:12px 0; }
   .gate-card .sub { margin-bottom:26px; }
@@ -228,6 +237,7 @@
     <div id="gate-logo"></div>
     <h1 id="gate-title">Entrá a Cironix</h1>
     <p class="sub" id="gate-sub"></p>
+    <div id="gate-main">
     <label class="accept">
       <input type="checkbox" id="accept">
       <span id="accept-text"></span>
@@ -236,6 +246,23 @@
     <button type="button" class="gbtn off" id="gate-login" aria-disabled="true"></button>
     <div class="gate-or" id="gate-or"><span>o</span></div>
     <button type="button" class="gbtn off" id="gate-go" aria-disabled="true"></button>
+    <div id="email-box">
+      <div class="gate-or"><span>o con tu correo</span></div>
+      <form id="email-form" novalidate>
+        <input class="fld" type="email" id="em" placeholder="Correo electrónico" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false">
+        <input class="fld" type="password" id="pw" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="current-password">
+        <button type="submit" class="gbtn alt off" id="em-go" aria-disabled="true"></button>
+      </form>
+      <div class="gate-links">
+        <button type="button" class="lnk" id="em-switch"></button>
+        <button type="button" class="lnk" id="em-forgot">Olvidé mi contraseña</button>
+      </div>
+    </div>
+    </div>
+    <form id="reset-box" hidden novalidate>
+      <input class="fld" type="password" id="pw2" placeholder="Nueva contraseña (mínimo 8 caracteres)" autocomplete="new-password">
+      <button type="submit" class="gbtn" id="pw2-go"><span>Guardar contraseña</span></button>
+    </form>
     <button type="button" class="clear" id="gate-out" hidden>Usar otra cuenta</button>
     <p class="gate-note" id="gate-note" role="status"></p>
   </div>
@@ -463,12 +490,15 @@
   const TERMS_VERSION = "2026-10-14", ACCEPT_KEY = "cironix.accept", ACCEPT_TTL = 15 * 60 * 1000;
   const gateTitle = document.getElementById("gate-title"), gateSub = document.getElementById("gate-sub"),
         accept = document.getElementById("accept"), gateHint = document.getElementById("gate-hint"),
-        gateGo = document.getElementById("gate-go"), gateLogin = document.getElementById("gate-login"), gateOr = document.getElementById("gate-or"), acceptText = document.getElementById("accept-text"), gateOut = document.getElementById("gate-out"), gateNote = document.getElementById("gate-note");
-  let view = "boot", booted = false, gateBusy = false;
+        gateGo = document.getElementById("gate-go"), gateLogin = document.getElementById("gate-login"), gateOr = document.getElementById("gate-or"), acceptText = document.getElementById("accept-text"),
+        mainBox = document.getElementById("gate-main"), emailBox = document.getElementById("email-box"), resetBox = document.getElementById("reset-box"),
+        emForm = document.getElementById("email-form"), em = document.getElementById("em"), pw = document.getElementById("pw"), emGo = document.getElementById("em-go"),
+        emSwitch = document.getElementById("em-switch"), emForgot = document.getElementById("em-forgot"), pw2 = document.getElementById("pw2"), pw2Go = document.getElementById("pw2-go"), gateOut = document.getElementById("gate-out"), gateNote = document.getElementById("gate-note");
+  let view = "boot", booted = false, gateBusy = false, recovering = false, emailMode = "in";
 
   function setView(v) {
     view = v; document.body.setAttribute("data-view", v);
-    if (v === "gate" || v === "consent") renderGate();
+    if (v === "gate" || v === "consent" || v === "reset") renderGate();
   }
   function firstName() {
     const m = (user && user.user_metadata) || {};
@@ -479,22 +509,36 @@
     const off = !accept.checked || gateBusy;
     gateGo.setAttribute("aria-disabled", off ? "true" : "false"); gateGo.classList.toggle("off", off);
     gateLogin.setAttribute("aria-disabled", off ? "true" : "false"); gateLogin.classList.toggle("off", off);
+    emGo.setAttribute("aria-disabled", off ? "true" : "false"); emGo.classList.toggle("off", off);
+    pw2Go.disabled = gateBusy;
+  }
+  function renderEmail() {
+    const up = emailMode === "up";
+    emGo.innerHTML = "<span>" + (up ? "Crear cuenta con correo" : "Iniciar sesión con correo") + "</span>";
+    emSwitch.textContent = up ? "¿Ya tenés cuenta? Iniciar sesión" : "¿No tenés cuenta? Crear cuenta con correo";
+    pw.autocomplete = up ? "new-password" : "current-password";
+    emForgot.hidden = up;
   }
   function renderGate() {
-    const consent = view === "consent";
-    if (!consent) clearAccept();
-    gateTitle.textContent = consent ? "Un último paso" : "Entrá a Cironix";
-    gateSub.textContent = consent
-      ? (firstName() ? "Hola, " + firstName() + ". " : "") + "Para usar Cironix tenés que aceptar los términos y la política de privacidad."
-      : "Iniciá sesión con Google o creá tu cuenta. Es gratis y tu historial queda guardado en tu cuenta.";
+    const reset = view === "reset", consent = view === "consent";
+    if (!consent && !reset) clearAccept();
+    mainBox.hidden = reset; resetBox.hidden = !reset;
+    gateTitle.textContent = reset ? "Nueva contraseña" : consent ? "Un último paso" : "Entrá a Cironix";
+    gateSub.textContent = reset
+      ? "Elegí una contraseña nueva para tu cuenta."
+      : consent
+        ? (firstName() ? "Hola, " + firstName() + ". " : "") + "Para usar Cironix tenés que aceptar los términos y la política de privacidad."
+        : "Iniciá sesión o creá tu cuenta con Google o con tu correo. Es gratis y tu historial queda guardado en tu cuenta.";
     const links = '<a href="/terminosycondiciones" target="_blank" rel="noopener">Términos y condiciones</a> y la <a href="/privacidad" target="_blank" rel="noopener">Política de privacidad</a>';
     acceptText.innerHTML = "Acepto los " + links + "." + (consent ? "" : " <strong>Es obligatorio para crear tu cuenta.</strong>");
     gateLogin.innerHTML = GLOGO + "<span>Iniciar sesión con Google</span>";
-    gateLogin.hidden = consent; gateOr.hidden = consent;
+    gateLogin.hidden = consent; gateOr.hidden = consent; emailBox.hidden = consent;
     gateGo.innerHTML = consent ? "<span>Aceptar y continuar</span>" : GLOGO + "<span>Crear cuenta con Google</span>";
     gateOut.hidden = !consent;
     accept.checked = false; gateHint.hidden = true; gateBusy = false; setGateNote("");
-    syncGate();
+    if (!consent && !reset) { emailMode = "in"; em.value = ""; pw.value = ""; }
+    pw2.value = "";
+    renderEmail(); syncGate();
   }
 
   // La casilla se marca antes de ir a Google: se recuerda un rato para registrarla al volver.
@@ -535,6 +579,61 @@
       failed = !!(r && r.error);
     } catch (e) { failed = true; }
     if (failed) { clearAccept(); gateBusy = false; syncGate(); setGateNote("No se pudo iniciar sesión. Probá de nuevo.", true); }
+  }
+  function emailError(err) {
+    const m = String((err && err.message) || "").toLowerCase(), c = String((err && err.code) || "").toLowerCase();
+    if (c === "invalid_credentials" || m.includes("invalid login")) return "Correo o contraseña incorrectos.";
+    if (c === "email_not_confirmed" || m.includes("not confirmed")) return "Todavía no confirmaste tu correo. Revisá tu bandeja de entrada y la carpeta de spam.";
+    if (c === "weak_password" || m.includes("password should")) return "La contraseña es muy débil. Probá con una más larga.";
+    if (c.includes("rate_limit") || (err && err.status === 429) || m.includes("rate limit")) return "Se enviaron demasiados correos. Esperá unos minutos y probá de nuevo.";
+    if (c === "user_already_exists" || m.includes("already registered")) return "Ese correo ya tiene una cuenta. Iniciá sesión.";
+    if (m.includes("sending") || c.includes("email_address") || c === "unexpected_failure") return "No se pudo enviar el correo de confirmación. Probá de nuevo más tarde.";
+    return "No se pudo completar. Probá de nuevo.";
+  }
+  async function submitEmail(e) {
+    e.preventDefault();
+    if (gateBusy) return;
+    if (!accept.checked) { gateHint.hidden = false; accept.focus(); return; }
+    const email = em.value.trim(), pass = pw.value, up = emailMode === "up";
+    if (!/^\S+@\S+\.\S+$/.test(email)) { setGateNote("Escribí un correo válido.", true); em.focus(); return; }
+    if (pass.length < 8) { setGateNote("La contraseña tiene que tener al menos 8 caracteres.", true); pw.focus(); return; }
+    gateBusy = true; syncGate(); setGateNote(up ? "Creando tu cuenta…" : "Entrando…"); rememberAccept();
+    try {
+      if (up) {
+        const r = await sb.auth.signUp({ email: email, password: pass, options: { emailRedirectTo: location.origin + "/" } });
+        if (r.error) throw r.error;
+        const u = r.data && r.data.user;
+        if (r.data && r.data.session) return; // sin confirmación por correo: el cambio de sesión nos lleva adelante
+        gateBusy = false; pw.value = ""; emailMode = "in"; renderEmail(); syncGate();
+        if (u && Array.isArray(u.identities) && !u.identities.length) { clearAccept(); setGateNote("Ese correo ya tiene una cuenta. Iniciá sesión.", true); }
+        else setGateNote("Te mandamos un correo a " + email + ". Abrí el enlace para confirmar tu cuenta y después iniciá sesión. Si no lo ves, revisá spam.");
+      } else {
+        const r = await sb.auth.signInWithPassword({ email: email, password: pass });
+        if (r.error) throw r.error;
+      }
+    } catch (err) { clearAccept(); gateBusy = false; syncGate(); setGateNote(emailError(err), true); }
+  }
+  async function forgotPassword() {
+    if (gateBusy) return;
+    const email = em.value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { setGateNote("Escribí tu correo arriba y tocá de nuevo.", true); em.focus(); return; }
+    gateBusy = true; syncGate(); setGateNote("Enviando…");
+    try {
+      const r = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + "/" });
+      if (r.error) throw r.error;
+      gateBusy = false; syncGate(); setGateNote("Si ese correo tiene una cuenta, te mandamos un enlace para cambiar la contraseña.");
+    } catch (err) { gateBusy = false; syncGate(); setGateNote(emailError(err), true); }
+  }
+  async function saveNewPassword(e) {
+    e.preventDefault();
+    if (gateBusy) return;
+    if (pw2.value.length < 8) { setGateNote("La contraseña tiene que tener al menos 8 caracteres.", true); pw2.focus(); return; }
+    gateBusy = true; syncGate(); setGateNote("Guardando…");
+    try {
+      const r = await sb.auth.updateUser({ password: pw2.value });
+      if (r.error) throw r.error;
+      recovering = false; await applySession(r.data && r.data.user ? r.data.user : user, true);
+    } catch (err) { gateBusy = false; syncGate(); setGateNote(emailError(err), true); }
   }
   async function leaveAccount() {
     try { await sb.auth.signOut(); } catch (e) { setGateNote("No se pudo cerrar la sesión. Probá de nuevo.", true); }
@@ -733,7 +832,11 @@
     startLogin();
   });
   gateOut.addEventListener("click", leaveAccount);
-  window.addEventListener("pageshow", function (e) { if (e.persisted && (view === "gate" || view === "consent")) renderGate(); });
+  emForm.addEventListener("submit", submitEmail);
+  emSwitch.addEventListener("click", function () { emailMode = emailMode === "up" ? "in" : "up"; setGateNote(""); renderEmail(); });
+  emForgot.addEventListener("click", forgotPassword);
+  resetBox.addEventListener("submit", saveNewPassword);
+  window.addEventListener("pageshow", function (e) { if (e.persisted && (view === "gate" || view === "consent" || view === "reset")) renderGate(); });
 
   (async function boot() {
     try {
@@ -742,14 +845,16 @@
       const first = new Promise(function (r) { resolveFirst = r; });
       sb.auth.onAuthStateChange(function (event, session) {
         const u = session && session.user ? session.user : null;
+        if (event === "PASSWORD_RECOVERY") { recovering = true; if (booted) setTimeout(function () { setView("reset"); }, 0); return; }
         if (!booted) { latest = u; if (event === "INITIAL_SESSION") resolveFirst(); return; }
+        if (recovering) { if (event === "SIGNED_OUT") recovering = false; else return; }
         // Se difiere con setTimeout para no llamar a Supabase dentro del propio callback de autenticación.
         setTimeout(function () { applySession(u); }, 0);
       });
       const wait = function (p, ms) { return Promise.race([p, new Promise(function (r) { setTimeout(r, ms); })]); };
       await Promise.all([wait(checkGoogle(), 3000), wait(first, 6000)]);
       booted = true;
-      await applySession(latest, true);
+      if (recovering) setView("reset"); else await applySession(latest, true);
     } catch (e) { booted = true; setView("app"); }
   })();
 </script>
