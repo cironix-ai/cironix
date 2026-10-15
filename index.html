@@ -109,6 +109,8 @@
   .gate-or { margin:22px 0 16px; display:flex; align-items:center; gap:12px; color:var(--mute); font-size:.85rem; }
   .gate-or::before, .gate-or::after { content:""; flex:1; height:1px; background:var(--line, #242428); }
   .gate-or[hidden], #gate-login[hidden] { display:none; }
+  .accept strong { font-weight:500; color:#fff; }
+  .gate-or { margin:12px 0; }
   .gate-card .sub { margin-bottom:26px; }
   .gate-card .clear { align-self:center; margin-top:10px; }
   .gate-note { min-height:1.3em; margin:12px 0 0; color:var(--mute); font-size:.85rem; }
@@ -226,13 +228,13 @@
     <div id="gate-logo"></div>
     <h1 id="gate-title">Entrá a Cironix</h1>
     <p class="sub" id="gate-sub"></p>
-    <button type="button" class="gbtn" id="gate-login"></button>
-    <div class="gate-or" id="gate-or"><span>¿Primera vez en Cironix?</span></div>
     <label class="accept">
       <input type="checkbox" id="accept">
       <span id="accept-text"></span>
     </label>
-    <p class="gate-hint" id="gate-hint" role="alert" hidden>Marcá la casilla para poder continuar.</p>
+    <p class="gate-hint" id="gate-hint" role="alert" hidden>Tenés que aceptar los términos y la política de privacidad para continuar.</p>
+    <button type="button" class="gbtn off" id="gate-login" aria-disabled="true"></button>
+    <div class="gate-or" id="gate-or"><span>o</span></div>
     <button type="button" class="gbtn off" id="gate-go" aria-disabled="true"></button>
     <button type="button" class="clear" id="gate-out" hidden>Usar otra cuenta</button>
     <p class="gate-note" id="gate-note" role="status"></p>
@@ -476,7 +478,7 @@
   function syncGate() {
     const off = !accept.checked || gateBusy;
     gateGo.setAttribute("aria-disabled", off ? "true" : "false"); gateGo.classList.toggle("off", off);
-    gateLogin.disabled = gateBusy;
+    gateLogin.setAttribute("aria-disabled", off ? "true" : "false"); gateLogin.classList.toggle("off", off);
   }
   function renderGate() {
     const consent = view === "consent";
@@ -486,7 +488,7 @@
       ? (firstName() ? "Hola, " + firstName() + ". " : "") + "Para usar Cironix tenés que aceptar los términos y la política de privacidad."
       : "Iniciá sesión con Google o creá tu cuenta. Es gratis y tu historial queda guardado en tu cuenta.";
     const links = '<a href="/terminosycondiciones" target="_blank" rel="noopener">Términos y condiciones</a> y la <a href="/privacidad" target="_blank" rel="noopener">Política de privacidad</a>';
-    acceptText.innerHTML = (consent ? "Acepto los " : "Al crear mi cuenta acepto los ") + links + ".";
+    acceptText.innerHTML = "Acepto los " + links + "." + (consent ? "" : " <strong>Es obligatorio para crear tu cuenta.</strong>");
     gateLogin.innerHTML = GLOGO + "<span>Iniciar sesión con Google</span>";
     gateLogin.hidden = consent; gateOr.hidden = consent;
     gateGo.innerHTML = consent ? "<span>Aceptar y continuar</span>" : GLOGO + "<span>Crear cuenta con Google</span>";
@@ -525,8 +527,8 @@
     if (!ok) { gateBusy = false; syncGate(); setGateNote("No se pudo guardar tu aceptación. Probá de nuevo.", true); return; }
     setGateNote(""); await enterApp();
   }
-  async function startLogin(create) {
-    gateBusy = true; syncGate(); setGateNote("Abriendo Google…"); if (create) rememberAccept(); else clearAccept();
+  async function startLogin() {
+    gateBusy = true; syncGate(); setGateNote("Abriendo Google…"); rememberAccept();
     let failed = false;
     try {
       const r = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + "/" } });
@@ -723,9 +725,13 @@
   gateGo.addEventListener("click", function () {
     if (gateBusy) return;
     if (!accept.checked) { gateHint.hidden = false; accept.focus(); return; }
-    if (view === "consent") acceptTerms(); else startLogin(true);
+    if (view === "consent") acceptTerms(); else startLogin();
   });
-  gateLogin.addEventListener("click", function () { if (!gateBusy) startLogin(false); });
+  gateLogin.addEventListener("click", function () {
+    if (gateBusy) return;
+    if (!accept.checked) { gateHint.hidden = false; accept.focus(); return; }
+    startLogin();
+  });
   gateOut.addEventListener("click", leaveAccount);
   window.addEventListener("pageshow", function (e) { if (e.persisted && (view === "gate" || view === "consent")) renderGate(); });
 
