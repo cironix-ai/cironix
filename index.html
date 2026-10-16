@@ -10,6 +10,41 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..600&display=swap" rel="stylesheet">
+<script>
+window.__cxApply = function (s) {
+  try {
+    var r = document.documentElement, st = r.style;
+    ["--bg","--side","--surface","--hover","--on","--bubble","--code","--line","--bgimg"].forEach(function (n) { st.removeProperty(n); });
+    r.removeAttribute("data-bgimg");
+    s = s || {};
+    var c = /^#[0-9a-f]{6}$/i.test(s.bg || "") ? s.bg : "#000000";
+    var R = parseInt(c.slice(1, 3), 16) / 255, G = parseInt(c.slice(3, 5), 16) / 255, B = parseInt(c.slice(5, 7), 16) / 255;
+    var mx = Math.max(R, G, B), mn = Math.min(R, G, B), l = (mx + mn) / 2, h = 0, sa = 0, d = mx - mn;
+    if (d) { sa = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === R ? ((G - B) / d + (G < B ? 6 : 0)) : mx === G ? (B - R) / d + 2 : (R - G) / d + 4; h /= 6; }
+    if (l > .17) l = .17;
+    function f(p, q, t) { if (t < 0) t += 1; if (t > 1) t -= 1; return t < 1/6 ? p + (q - p) * 6 * t : t < .5 ? q : t < 2/3 ? p + (q - p) * (2/3 - t) * 6 : p; }
+    var rr, gg, bb;
+    if (!sa) { rr = gg = bb = l; } else { var q = l < .5 ? l * (1 + sa) : l + sa - l * sa, p = 2 * l - q; rr = f(p, q, h + 1/3); gg = f(p, q, h); bb = f(p, q, h - 1/3); }
+    var v = [rr, gg, bb].map(function (x) { return Math.round(x * 255); });
+    function mix(a) { return "rgb(" + v.map(function (x) { return Math.round(x + (255 - x) * a); }).join(",") + ")"; }
+    var isBlack = v[0] + v[1] + v[2] < 6;
+    if (!isBlack) {
+      st.setProperty("--bg", "rgb(" + v.join(",") + ")");
+      st.setProperty("--side", "rgb(" + v.map(function (x) { return Math.round(x * .7); }).join(",") + ")");
+      st.setProperty("--surface", mix(.04)); st.setProperty("--hover", mix(.06)); st.setProperty("--on", mix(.10));
+      st.setProperty("--bubble", mix(.10)); st.setProperty("--code", mix(.06)); st.setProperty("--line", mix(.13));
+    }
+    if (s.img && /^data:image\//.test(s.img)) {
+      r.setAttribute("data-bgimg", "1");
+      st.setProperty("--bgimg", 'url("' + s.img + '")');
+      st.setProperty("--side", "rgba(0,0,0,.58)"); st.setProperty("--surface", "rgba(12,12,14,.74)");
+      st.setProperty("--bubble", "rgba(28,28,32,.78)"); st.setProperty("--code", "rgba(14,14,16,.78)");
+      st.setProperty("--hover", "rgba(255,255,255,.08)"); st.setProperty("--line", "rgba(255,255,255,.16)");
+    }
+  } catch (e) {}
+};
+(function () { try { var s = JSON.parse(localStorage.getItem("cironix.settings") || "{}"); window.__cxApply(s); document.documentElement.lang = s.lang || "es"; } catch (e) {} })();
+</script>
 <style>
   :root {
     color-scheme: dark;
@@ -235,6 +270,22 @@
   .lb-actions button:hover { background:var(--hover); }
   .lb-actions .danger { color:var(--err); }
   .glink { background:none; border:0; padding:0; color:#5B9DFF; font:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+  html[data-bgimg] body { background:linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), var(--bgimg) center / cover fixed no-repeat; }
+  dialog#settings { background:#0C0C0E; color:var(--text); border:1px solid var(--line); border-radius:18px; padding:22px; width:min(92vw, 460px); max-height:92dvh; overflow:auto; }
+  dialog#settings::backdrop { background:rgba(0,0,0,.78); }
+  #settings h2 { margin:0 0 18px; font-weight:500; font-size:1.35rem; letter-spacing:-.02em; }
+  #settings h3 { margin:0 0 8px; font-weight:500; font-size:.95rem; color:#D2D2D6; }
+  .sgroup { margin:0 0 22px; }
+  .sgroup select.fld { margin:0; appearance:auto; }
+  .swatches { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 12px; }
+  .sw { width:38px; height:38px; border-radius:50%; border:2px solid #34343A; cursor:pointer; padding:0; }
+  .sw.on { border-color:#fff; box-shadow:0 0 0 2px #0C0C0E inset; }
+  .srow { display:flex; flex-wrap:wrap; gap:8px; }
+  .sbtn { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:transparent; cursor:pointer; font-size:.9rem; color:var(--text); }
+  .sbtn:hover { background:var(--hover); }
+  .sbtn input[type=color] { width:22px; height:22px; padding:0; border:0; background:none; cursor:pointer; }
+  .shint { margin:10px 0 0; color:var(--mute); font-size:.82rem; }
+  .gate-lang { margin:18px auto 0; display:block; background:transparent; color:var(--mute); border:1px solid var(--line, #242428); border-radius:10px; padding:8px 12px; font:inherit; font-size:.88rem; }
   .fine { margin:10px 0 0; text-align:center; color:var(--mute); font-size:.78rem; }
 
   button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
@@ -294,6 +345,10 @@
     </form>
     <button type="button" class="clear" id="gate-out" hidden>Usar otra cuenta</button>
     <p class="gate-note" id="gate-note" role="status"></p>
+    <select id="gate-lang" class="gate-lang" data-notr aria-label="Idioma">
+      <option value="es">Español</option><option value="en">English</option><option value="de">Deutsch</option>
+      <option value="pt">Português</option><option value="fr">Français</option><option value="it">Italiano</option>
+    </select>
   </div>
 </section>
 <div class="app">
@@ -307,6 +362,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.7"/><path d="M21 16l-5-5-8 8"/></svg>
       Imágenes
     </button>
+    <button type="button" class="newchat" id="setbtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      Ajustes
+    </button>
     <ul class="list" id="list"></ul>
     <div class="foot">
       <div class="account" id="account" hidden></div>
@@ -316,6 +375,28 @@
     </div>
   </aside>
   <div class="backdrop" id="backdrop"></div>
+  <dialog id="settings" aria-label="Ajustes">
+    <h2>Ajustes</h2>
+    <div class="sgroup">
+      <h3>Idioma</h3>
+      <select id="s-lang" class="fld" data-notr aria-label="Idioma">
+        <option value="es">Español</option><option value="en">English</option><option value="de">Deutsch</option>
+        <option value="pt">Português</option><option value="fr">Français</option><option value="it">Italiano</option>
+      </select>
+    </div>
+    <div class="sgroup">
+      <h3>Fondo</h3>
+      <div class="swatches" id="swatches"></div>
+      <div class="srow">
+        <label class="sbtn"><input type="color" id="s-color" value="#000000" aria-label="Color personalizado"> Color personalizado</label>
+        <label class="sbtn" id="s-up">Subir imagen<input type="file" id="s-file" accept="image/*" hidden></label>
+        <button type="button" class="sbtn" id="s-noimg" hidden>Quitar imagen</button>
+      </div>
+      <p class="shint">Los colores muy claros se oscurecen para que el texto se lea.</p>
+      <p class="gate-note err" id="s-err" role="status"></p>
+    </div>
+    <button type="button" class="gbtn" id="s-close">Listo</button>
+  </dialog>
   <dialog id="lightbox" aria-label="Imagen">
     <img id="lb-img" alt="">
     <p id="lb-cap"></p>
@@ -369,7 +450,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           </button>
         </form>
-        <p class="fine">Cironix puede equivocarse. Revisá lo importante.</p>
+        <p class="fine" id="fine">Cironix puede equivocarse. Revisá lo importante.</p>
       </footer>
     </div>
   </div>
@@ -691,7 +772,7 @@
     try { await sb.auth.signOut(); } catch (e) { setGateNote("No se pudo cerrar la sesión. Probá de nuevo.", true); }
   }
 
-  function resetChat() { currentId = null; history.length = 0; gallery = []; setPane("chat"); showWelcome(); }
+  function resetChat() { currentId = null; history.length = 0; gallery = []; leftChat = leftImg = null; renderFine(); setPane("chat"); showWelcome(); }
   async function enterApp() {
     setNote("Sincronizando…");
     let msg = null;
@@ -818,6 +899,27 @@
   function grow() { t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 160) + "px"; }
   function setBusy(v) { busy = v; document.body.classList.toggle("busy", v); syncSend(); }
 
+  /* ---- Límite diario por persona ---- */
+  const fineEl = document.getElementById("fine"), FINE = "Cironix puede equivocarse. Revisá lo importante.";
+  let leftChat = null, leftImg = null;
+  function renderFine() {
+    const x = [];
+    if (leftChat !== null && leftChat <= 10) x.push(leftChat === 0 ? "Fue tu último mensaje de hoy" : "Te quedan " + leftChat + (leftChat === 1 ? " mensaje" : " mensajes") + " hoy");
+    if (leftImg !== null && leftImg <= 3) x.push(leftImg === 0 ? "Fue tu última imagen de hoy" : "Te quedan " + leftImg + (leftImg === 1 ? " imagen" : " imágenes") + " hoy");
+    fineEl.textContent = FINE + (x.length ? " · " + x.join(" · ") : "");
+  }
+  async function authHeaders() {
+    const h = { "Content-Type": "application/json" };
+    try {
+      if (sb) {
+        const r = await sb.auth.getSession();
+        const tk = r && r.data && r.data.session && r.data.session.access_token;
+        if (tk) h.Authorization = "Bearer " + tk;
+      }
+    } catch (e) {}
+    return h;
+  }
+
   /* ---- Galería de imágenes ---- */
   const galBtn = document.getElementById("galbtn"), galEl = document.getElementById("gallery"), gGrid = document.getElementById("ggrid"),
         gCount = document.getElementById("gcount"), gEmpty = document.getElementById("gempty"), lb = document.getElementById("lightbox"),
@@ -932,11 +1034,12 @@
     let ok = false;
     try {
       const r = await fetch("/.netlify/functions/image", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: prompt })
+        method: "POST", headers: await authHeaders(), body: JSON.stringify({ prompt: prompt })
       });
       let data; try { data = await r.json(); } catch (e) { data = {}; }
       if (!r.ok) throw new Error(data.error || "No se pudo crear la imagen. Probá de nuevo.");
       if (!data.image) throw new Error("No llegó ninguna imagen. Probá de nuevo.");
+      if (typeof data.remaining === "number") { leftImg = data.remaining; renderFine(); }
       const src = "data:image/jpeg;base64," + data.image;
       const fig = document.createElement("figure"); fig.className = "pic";
       const im = document.createElement("img"); im.src = src; im.alt = prompt; im.width = 1024; im.height = 1024;
@@ -978,11 +1081,12 @@
     let okReply = false;
     try {
       const r = await fetch("/.netlify/functions/chat", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history })
+        method: "POST", headers: await authHeaders(), body: JSON.stringify({ messages: history })
       });
       let data; try { data = await r.json(); } catch (e) { data = {}; }
       if (!r.ok) throw new Error(data.error || "Algo salió mal. Probá de nuevo.");
       if (!data.reply) throw new Error("No llegó ninguna respuesta. Probá de nuevo.");
+      if (typeof data.remaining === "number") { leftChat = data.remaining; renderFine(); }
       bot.body.className = "reply"; bot.body.innerHTML = md(data.reply);
       history.push({ role: "assistant", content: data.reply });
       okReply = true;
@@ -1059,6 +1163,137 @@
   emForgot.addEventListener("click", forgotPassword);
   resetBox.addEventListener("submit", saveNewPassword);
   window.addEventListener("pageshow", function (e) { if (e.persisted && (view === "gate" || view === "consent" || view === "reset")) renderGate(); });
+
+/* ---- Ajustes: idioma y fondo ---- */
+  const I18N = {"d": {"Entrá a Cironix": ["Sign in to Cironix", "Bei Cironix anmelden", "Entrar no Cironix", "Connecte-toi à Cironix", "Accedi a Cironix"], "Un último paso": ["One last step", "Noch ein letzter Schritt", "Mais um passo", "Une dernière étape", "Un ultimo passo"], "Nueva contraseña": ["New password", "Neues Passwort", "Nova senha", "Nouveau mot de passe", "Nuova password"], "Elegí una contraseña nueva para tu cuenta.": ["Choose a new password for your account.", "Wähle ein neues Passwort für dein Konto.", "Escolha uma nova senha para sua conta.", "Choisis un nouveau mot de passe pour ton compte.", "Scegli una nuova password per il tuo account."], "Para usar Cironix tenés que aceptar los términos y la política de privacidad.": ["To use Cironix you need to accept the terms and the privacy policy.", "Um Cironix zu nutzen, musst du die Nutzungsbedingungen und die Datenschutzerklärung akzeptieren.", "Para usar o Cironix, você precisa aceitar os termos e a política de privacidade.", "Pour utiliser Cironix, tu dois accepter les conditions et la politique de confidentialité.", "Per usare Cironix devi accettare i termini e l'informativa sulla privacy."], "Iniciá sesión o creá tu cuenta con Google o con tu correo. Es gratis y tu historial queda guardado en tu cuenta.": ["Sign in or create your account with Google or with your email. It's free and your history is saved to your account.", "Melde dich an oder erstelle dein Konto mit Google oder mit deiner E-Mail. Es ist kostenlos und dein Verlauf wird in deinem Konto gespeichert.", "Entre ou crie sua conta com o Google ou com seu e-mail. É grátis e seu histórico fica salvo na sua conta.", "Connecte-toi ou crée ton compte avec Google ou avec ton e-mail. C'est gratuit et ton historique est enregistré dans ton compte.", "Accedi o crea il tuo account con Google o con la tua email. È gratis e la tua cronologia viene salvata nel tuo account."], "Tenés que aceptar los términos y la política de privacidad para continuar.": ["You need to accept the terms and the privacy policy to continue.", "Du musst die Nutzungsbedingungen und die Datenschutzerklärung akzeptieren, um fortzufahren.", "Você precisa aceitar os termos e a política de privacidade para continuar.", "Tu dois accepter les conditions et la politique de confidentialité pour continuer.", "Devi accettare i termini e l'informativa sulla privacy per continuare."], "Iniciar sesión con Google": ["Sign in with Google", "Mit Google anmelden", "Entrar com o Google", "Se connecter avec Google", "Accedi con Google"], "Crear cuenta con Google": ["Create account with Google", "Konto mit Google erstellen", "Criar conta com o Google", "Créer un compte avec Google", "Crea account con Google"], "Continuar con Google": ["Continue with Google", "Weiter mit Google", "Continuar com o Google", "Continuer avec Google", "Continua con Google"], "Aceptar y continuar": ["Accept and continue", "Akzeptieren und fortfahren", "Aceitar e continuar", "Accepter et continuer", "Accetta e continua"], "Usar otra cuenta": ["Use another account", "Anderes Konto verwenden", "Usar outra conta", "Utiliser un autre compte", "Usa un altro account"], "o": ["or", "oder", "ou", "ou", "o"], "o con tu correo": ["or with your email", "oder mit deiner E-Mail", "ou com seu e-mail", "ou avec ton e-mail", "oppure con la tua email"], "Iniciar sesión con correo": ["Sign in with email", "Mit E-Mail anmelden", "Entrar com e-mail", "Se connecter par e-mail", "Accedi con email"], "Crear cuenta con correo": ["Create account with email", "Konto mit E-Mail erstellen", "Criar conta com e-mail", "Créer un compte par e-mail", "Crea account con email"], "¿No tenés cuenta? Crear cuenta con correo": ["Don't have an account? Create one with email", "Noch kein Konto? Mit E-Mail erstellen", "Não tem conta? Crie uma com e-mail", "Pas de compte ? Crées-en un par e-mail", "Non hai un account? Creane uno con email"], "¿Ya tenés cuenta? Iniciar sesión": ["Already have an account? Sign in", "Schon ein Konto? Anmelden", "Já tem conta? Entrar", "Déjà un compte ? Connecte-toi", "Hai già un account? Accedi"], "Olvidé mi contraseña": ["I forgot my password", "Passwort vergessen", "Esqueci minha senha", "Mot de passe oublié", "Ho dimenticato la password"], "Guardar contraseña": ["Save password", "Passwort speichern", "Salvar senha", "Enregistrer le mot de passe", "Salva password"], "Acepto los": ["I accept the", "Ich akzeptiere die", "Aceito os", "J'accepte les", "Accetto i"], "Términos y condiciones": ["Terms and conditions", "Nutzungsbedingungen", "Termos e condições", "Conditions générales", "Termini e condizioni"], "y la": ["and the", "und die", "e a", "et la", "e la"], "Política de privacidad": ["Privacy policy", "Datenschutzerklärung", "Política de privacidade", "Politique de confidentialité", "Privacy policy"], "Es obligatorio para crear tu cuenta.": ["This is required to create your account.", "Das ist erforderlich, um dein Konto zu erstellen.", "Isso é obrigatório para criar sua conta.", "C'est obligatoire pour créer ton compte.", "È obbligatorio per creare il tuo account."], "Abriendo Google…": ["Opening Google…", "Google wird geöffnet…", "Abrindo o Google…", "Ouverture de Google…", "Apertura di Google…"], "No se pudo guardar tu aceptación. Probá de nuevo.": ["Couldn't save your acceptance. Try again.", "Deine Zustimmung konnte nicht gespeichert werden. Versuche es erneut.", "Não foi possível salvar sua aceitação. Tente novamente.", "Impossible d'enregistrer ton acceptation. Réessaie.", "Impossibile salvare la tua accettazione. Riprova."], "No se pudo iniciar sesión. Probá de nuevo.": ["Couldn't sign in. Try again.", "Anmeldung fehlgeschlagen. Versuche es erneut.", "Não foi possível entrar. Tente novamente.", "Connexion impossible. Réessaie.", "Impossibile accedere. Riprova."], "No se pudo cerrar la sesión. Probá de nuevo.": ["Couldn't sign out. Try again.", "Abmelden fehlgeschlagen. Versuche es erneut.", "Não foi possível sair. Tente novamente.", "Déconnexion impossible. Réessaie.", "Impossibile uscire. Riprova."], "Correo o contraseña incorrectos.": ["Incorrect email or password.", "E-Mail oder Passwort falsch.", "E-mail ou senha incorretos.", "E-mail ou mot de passe incorrect.", "Email o password errati."], "Todavía no confirmaste tu correo. Revisá tu bandeja de entrada y la carpeta de spam.": ["You haven't confirmed your email yet. Check your inbox and spam folder.", "Du hast deine E-Mail noch nicht bestätigt. Prüfe deinen Posteingang und den Spam-Ordner.", "Você ainda não confirmou seu e-mail. Verifique sua caixa de entrada e a pasta de spam.", "Tu n'as pas encore confirmé ton e-mail. Vérifie ta boîte de réception et tes spams.", "Non hai ancora confermato la tua email. Controlla la posta in arrivo e lo spam."], "La contraseña es muy débil. Probá con una más larga.": ["That password is too weak. Try a longer one.", "Das Passwort ist zu schwach. Versuche ein längeres.", "A senha é muito fraca. Tente uma mais longa.", "Ce mot de passe est trop faible. Essaie-en un plus long.", "La password è troppo debole. Provane una più lunga."], "Se enviaron demasiados correos. Esperá unos minutos y probá de nuevo.": ["Too many emails were sent. Wait a few minutes and try again.", "Es wurden zu viele E-Mails gesendet. Warte ein paar Minuten und versuche es erneut.", "Foram enviados e-mails demais. Aguarde alguns minutos e tente novamente.", "Trop d'e-mails ont été envoyés. Attends quelques minutes et réessaie.", "Sono state inviate troppe email. Attendi qualche minuto e riprova."], "Ese correo ya tiene una cuenta. Iniciá sesión.": ["That email already has an account. Sign in.", "Für diese E-Mail gibt es bereits ein Konto. Melde dich an.", "Esse e-mail já tem uma conta. Entre nela.", "Cet e-mail a déjà un compte. Connecte-toi.", "Questa email ha già un account. Accedi."], "No se pudo enviar el correo de confirmación. Probá de nuevo más tarde.": ["Couldn't send the confirmation email. Try again later.", "Die Bestätigungs-E-Mail konnte nicht gesendet werden. Versuche es später erneut.", "Não foi possível enviar o e-mail de confirmação. Tente novamente mais tarde.", "Impossible d'envoyer l'e-mail de confirmation. Réessaie plus tard.", "Impossibile inviare l'email di conferma. Riprova più tardi."], "No se pudo completar. Probá de nuevo.": ["Couldn't complete that. Try again.", "Das hat nicht geklappt. Versuche es erneut.", "Não foi possível concluir. Tente novamente.", "Impossible de terminer. Réessaie.", "Impossibile completare. Riprova."], "Escribí un correo válido.": ["Enter a valid email.", "Gib eine gültige E-Mail ein.", "Digite um e-mail válido.", "Saisis un e-mail valide.", "Inserisci un'email valida."], "La contraseña tiene que tener al menos 8 caracteres.": ["The password must have at least 8 characters.", "Das Passwort muss mindestens 8 Zeichen haben.", "A senha deve ter pelo menos 8 caracteres.", "Le mot de passe doit contenir au moins 8 caractères.", "La password deve avere almeno 8 caratteri."], "Creando tu cuenta…": ["Creating your account…", "Dein Konto wird erstellt…", "Criando sua conta…", "Création de ton compte…", "Creazione del tuo account…"], "Entrando…": ["Signing in…", "Anmeldung läuft…", "Entrando…", "Connexion…", "Accesso in corso…"], "Enviando…": ["Sending…", "Wird gesendet…", "Enviando…", "Envoi…", "Invio in corso…"], "Guardando…": ["Saving…", "Wird gespeichert…", "Salvando…", "Enregistrement…", "Salvataggio…"], "Escribí tu correo arriba y tocá de nuevo.": ["Enter your email above and tap again.", "Gib oben deine E-Mail ein und tippe erneut.", "Digite seu e-mail acima e toque de novo.", "Saisis ton e-mail ci-dessus et appuie à nouveau.", "Inserisci la tua email sopra e tocca di nuovo."], "Si ese correo tiene una cuenta, te mandamos un enlace para cambiar la contraseña.": ["If that email has an account, we sent you a link to change the password.", "Falls diese E-Mail ein Konto hat, haben wir dir einen Link zum Ändern des Passworts geschickt.", "Se esse e-mail tiver uma conta, enviamos um link para alterar a senha.", "Si cet e-mail a un compte, nous t'avons envoyé un lien pour changer le mot de passe.", "Se questa email ha un account, ti abbiamo inviato un link per cambiare la password."], "Correo electrónico": ["Email", "E-Mail", "E-mail", "E-mail", "Email"], "Contraseña (mínimo 8 caracteres)": ["Password (at least 8 characters)", "Passwort (mindestens 8 Zeichen)", "Senha (mínimo de 8 caracteres)", "Mot de passe (8 caractères minimum)", "Password (almeno 8 caratteri)"], "Nueva contraseña (mínimo 8 caracteres)": ["New password (at least 8 characters)", "Neues Passwort (mindestens 8 Zeichen)", "Nova senha (mínimo de 8 caracteres)", "Nouveau mot de passe (8 caractères minimum)", "Nuova password (almeno 8 caratteri)"], "Cargando": ["Loading", "Wird geladen", "Carregando", "Chargement", "Caricamento"], "Nuevo chat": ["New chat", "Neuer Chat", "Novo chat", "Nouveau chat", "Nuova chat"], "Imágenes": ["Images", "Bilder", "Imagens", "Images", "Immagini"], "Ajustes": ["Settings", "Einstellungen", "Ajustes", "Paramètres", "Impostazioni"], "Borrar todo el historial": ["Delete all history", "Gesamten Verlauf löschen", "Apagar todo o histórico", "Supprimer tout l'historique", "Elimina tutta la cronologia"], "Privacidad": ["Privacy", "Datenschutz", "Privacidade", "Confidentialité", "Privacy"], "y": ["and", "und", "e", "et", "e"], "términos": ["terms", "Bedingungen", "termos", "conditions", "termini"], "Historial de conversaciones": ["Conversation history", "Chatverlauf", "Histórico de conversas", "Historique des conversations", "Cronologia delle conversazioni"], "Abrir historial": ["Open history", "Verlauf öffnen", "Abrir histórico", "Ouvrir l'historique", "Apri la cronologia"], "Tu historial está guardado en tu cuenta.": ["Your history is saved to your account.", "Dein Verlauf wird in deinem Konto gespeichert.", "Seu histórico está salvo na sua conta.", "Ton historique est enregistré dans ton compte.", "La tua cronologia è salvata nel tuo account."], "Sin iniciar sesión, tus chats quedan solo en este navegador.": ["Without signing in, your chats stay only in this browser.", "Ohne Anmeldung bleiben deine Chats nur in diesem Browser.", "Sem entrar na conta, suas conversas ficam apenas neste navegador.", "Sans connexion, tes chats restent uniquement dans ce navigateur.", "Senza accedere, le tue chat restano solo in questo browser."], "El historial se guarda solo en este navegador.": ["History is saved only in this browser.", "Der Verlauf wird nur in diesem Browser gespeichert.", "O histórico fica salvo apenas neste navegador.", "L'historique est enregistré uniquement dans ce navigateur.", "La cronologia viene salvata solo in questo browser."], "Tu cuenta": ["Your account", "Dein Konto", "Sua conta", "Ton compte", "Il tuo account"], "Cerrar sesión": ["Sign out", "Abmelden", "Sair", "Se déconnecter", "Esci"], "Sincronizando…": ["Syncing…", "Wird synchronisiert…", "Sincronizando…", "Synchronisation…", "Sincronizzazione…"], "Acá van a aparecer tus conversaciones.": ["Your conversations will show up here.", "Hier erscheinen deine Unterhaltungen.", "Suas conversas vão aparecer aqui.", "Tes conversations apparaîtront ici.", "Le tue conversazioni appariranno qui."], "No se pudieron pasar tus conversaciones a la cuenta.": ["Couldn't move your conversations to your account.", "Deine Unterhaltungen konnten nicht in dein Konto übertragen werden.", "Não foi possível passar suas conversas para a conta.", "Impossible de transférer tes conversations vers ton compte.", "Impossibile trasferire le tue conversazioni nell'account."], "No se pudo cargar tu historial. Revisá tu conexión.": ["Couldn't load your history. Check your connection.", "Dein Verlauf konnte nicht geladen werden. Prüfe deine Verbindung.", "Não foi possível carregar seu histórico. Verifique sua conexão.", "Impossible de charger ton historique. Vérifie ta connexion.", "Impossibile caricare la cronologia. Controlla la connessione."], "Llegaste al límite de 200 conversaciones. Borrá alguna para guardar más.": ["You've reached the limit of 200 conversations. Delete some to save more.", "Du hast das Limit von 200 Unterhaltungen erreicht. Lösche einige, um mehr zu speichern.", "Você atingiu o limite de 200 conversas. Apague algumas para salvar mais.", "Tu as atteint la limite de 200 conversations. Supprime-en pour en enregistrer d'autres.", "Hai raggiunto il limite di 200 conversazioni. Eliminane qualcuna per salvarne altre."], "No se pudo guardar esta conversación en tu cuenta.": ["Couldn't save this conversation to your account.", "Diese Unterhaltung konnte nicht in deinem Konto gespeichert werden.", "Não foi possível salvar esta conversa na sua conta.", "Impossible d'enregistrer cette conversation dans ton compte.", "Impossibile salvare questa conversazione nel tuo account."], "No se pudo guardar esta conversación.": ["Couldn't save this conversation.", "Diese Unterhaltung konnte nicht gespeichert werden.", "Não foi possível salvar esta conversa.", "Impossible d'enregistrer cette conversation.", "Impossibile salvare questa conversazione."], "No se pudo abrir la conversación.": ["Couldn't open the conversation.", "Die Unterhaltung konnte nicht geöffnet werden.", "Não foi possível abrir a conversa.", "Impossible d'ouvrir la conversation.", "Impossibile aprire la conversazione."], "¿Borrar esta conversación?": ["Delete this conversation?", "Diese Unterhaltung löschen?", "Apagar esta conversa?", "Supprimer cette conversation ?", "Eliminare questa conversazione?"], "No se pudo borrar la conversación.": ["Couldn't delete the conversation.", "Die Unterhaltung konnte nicht gelöscht werden.", "Não foi possível apagar a conversa.", "Impossible de supprimer la conversation.", "Impossibile eliminare la conversazione."], "¿Borrar todo el historial de tu cuenta?": ["Delete all the history in your account?", "Den gesamten Verlauf deines Kontos löschen?", "Apagar todo o histórico da sua conta?", "Supprimer tout l'historique de ton compte ?", "Eliminare tutta la cronologia del tuo account?"], "¿Borrar todo el historial de este navegador?": ["Delete all the history in this browser?", "Den gesamten Verlauf in diesem Browser löschen?", "Apagar todo o histórico deste navegador?", "Supprimer tout l'historique de ce navigateur ?", "Eliminare tutta la cronologia di questo browser?"], "No se pudo borrar el historial.": ["Couldn't delete the history.", "Der Verlauf konnte nicht gelöscht werden.", "Não foi possível apagar o histórico.", "Impossible de supprimer l'historique.", "Impossibile eliminare la cronologia."], "¿En qué te ayudo?": ["How can I help?", "Wie kann ich helfen?", "Como posso ajudar?", "Comment puis-je t'aider ?", "Come posso aiutarti?"], "Respondo en tu idioma y también creo imágenes. Es gratis.": ["I reply in your language and I also create images. It's free.", "Ich antworte in deiner Sprache und erstelle auch Bilder. Es ist kostenlos.", "Respondo no seu idioma e também crio imagens. É grátis.", "Je réponds dans ta langue et je crée aussi des images. C'est gratuit.", "Rispondo nella tua lingua e creo anche immagini. È gratis."], "Explicar algo con palabras simples": ["Explain something simply", "Etwas einfach erklären", "Explicar algo de forma simples", "Expliquer quelque chose simplement", "Spiegare qualcosa in modo semplice"], "Escribir un mensaje": ["Write a message", "Eine Nachricht schreiben", "Escrever uma mensagem", "Écrire un message", "Scrivere un messaggio"], "Pedir ideas": ["Ask for ideas", "Nach Ideen fragen", "Pedir ideias", "Demander des idées", "Chiedere idee"], "Traducir un texto": ["Translate a text", "Einen Text übersetzen", "Traduzir um texto", "Traduire un texte", "Tradurre un testo"], "Crear una imagen": ["Create an image", "Ein Bild erstellen", "Criar uma imagem", "Créer une image", "Crea un'immagine"], "Explicame con palabras simples:": ["Explain to me in simple words:", "Erkläre mir mit einfachen Worten:", "Explique para mim com palavras simples:", "Explique-moi avec des mots simples :", "Spiegami con parole semplici:"], "Ayudame a escribir un mensaje para": ["Help me write a message to", "Hilf mir, eine Nachricht zu schreiben an", "Ajude-me a escrever uma mensagem para", "Aide-moi à écrire un message pour", "Aiutami a scrivere un messaggio per"], "Dame ideas para": ["Give me ideas for", "Gib mir Ideen für", "Me dê ideias para", "Donne-moi des idées pour", "Dammi idee per"], "Traducí al inglés:": ["Translate into Spanish:", "Übersetze ins Spanische:", "Traduza para o espanhol:", "Traduis en espagnol :", "Traduci in spagnolo:"], "Creá una imagen de": ["Create an image of", "Erstelle ein Bild von", "Crie uma imagem de", "Crée une image de", "Crea un'immagine di"], "Escribí tu mensaje": ["Type your message", "Schreibe deine Nachricht", "Escreva sua mensagem", "Écris ton message", "Scrivi il tuo messaggio"], "Mensaje": ["Message", "Nachricht", "Mensagem", "Message", "Messaggio"], "Enviar mensaje": ["Send message", "Nachricht senden", "Enviar mensagem", "Envoyer le message", "Invia messaggio"], "Conversación con Cironix": ["Conversation with Cironix", "Unterhaltung mit Cironix", "Conversa com o Cironix", "Conversation avec Cironix", "Conversazione con Cironix"], "Pensando…": ["Thinking…", "Denke nach…", "Pensando…", "Réflexion…", "Sto pensando…"], "Cironix puede equivocarse. Revisá lo importante.": ["Cironix can make mistakes. Check important information.", "Cironix kann sich irren. Überprüfe wichtige Informationen.", "O Cironix pode errar. Confira o que for importante.", "Cironix peut se tromper. Vérifie les informations importantes.", "Cironix può sbagliare. Controlla le informazioni importanti."], "Fue tu último mensaje de hoy": ["That was your last message for today", "Das war deine letzte Nachricht für heute", "Essa foi sua última mensagem de hoje", "C'était ton dernier message d'aujourd'hui", "Era il tuo ultimo messaggio di oggi"], "Fue tu última imagen de hoy": ["That was your last image for today", "Das war dein letztes Bild für heute", "Essa foi sua última imagem de hoje", "C'était ta dernière image d'aujourd'hui", "Era la tua ultima immagine di oggi"], "Probar de nuevo": ["Try again", "Erneut versuchen", "Tentar de novo", "Réessayer", "Riprova"], "No hay conexión. Revisá tu internet y probá de nuevo.": ["No connection. Check your internet and try again.", "Keine Verbindung. Prüfe dein Internet und versuche es erneut.", "Sem conexão. Verifique sua internet e tente novamente.", "Pas de connexion. Vérifie ton internet et réessaie.", "Nessuna connessione. Controlla internet e riprova."], "Algo salió mal. Probá de nuevo.": ["Something went wrong. Try again.", "Etwas ist schiefgelaufen. Versuche es erneut.", "Algo deu errado. Tente novamente.", "Un problème est survenu. Réessaie.", "Qualcosa è andato storto. Riprova."], "No llegó ninguna respuesta. Probá de nuevo.": ["No reply came back. Try again.", "Es kam keine Antwort. Versuche es erneut.", "Nenhuma resposta chegou. Tente novamente.", "Aucune réponse reçue. Réessaie.", "Nessuna risposta ricevuta. Riprova."], "Todavía no creaste ninguna imagen. Escribí “creá una imagen de…” en el chat.": ["You haven't created any images yet. Type “create an image of…” in the chat.", "Du hast noch keine Bilder erstellt. Schreibe im Chat „erstelle ein Bild von …“.", "Você ainda não criou nenhuma imagem. Escreva “crie uma imagem de…” no chat.", "Tu n'as pas encore créé d'image. Écris « crée une image de… » dans le chat.", "Non hai ancora creato immagini. Scrivi «crea un'immagine di…» nella chat."], "Imagen": ["Image", "Bild", "Imagem", "Image", "Immagine"], "Descargar": ["Download", "Herunterladen", "Baixar", "Télécharger", "Scarica"], "Borrar": ["Delete", "Löschen", "Apagar", "Supprimer", "Elimina"], "Cerrar": ["Close", "Schließen", "Fechar", "Fermer", "Chiudi"], "Cargando…": ["Loading…", "Wird geladen…", "Carregando…", "Chargement…", "Caricamento…"], "Creando tu imagen…": ["Creating your image…", "Dein Bild wird erstellt…", "Criando sua imagem…", "Création de ton image…", "Creazione della tua immagine…"], "Ver en Imágenes": ["See in Images", "In Bilder ansehen", "Ver em Imagens", "Voir dans Images", "Vedi in Immagini"], "Sin cuenta, dura hasta que cierres la página.": ["Without an account, it lasts until you close the page.", "Ohne Konto bleibt es, bis du die Seite schließt.", "Sem conta, dura até você fechar a página.", "Sans compte, elle dure jusqu'à la fermeture de la page.", "Senza account, dura finché non chiudi la pagina."], "No se pudieron cargar tus imágenes. Revisá tu conexión.": ["Couldn't load your images. Check your connection.", "Deine Bilder konnten nicht geladen werden. Prüfe deine Verbindung.", "Não foi possível carregar suas imagens. Verifique sua conexão.", "Impossible de charger tes images. Vérifie ta connexion.", "Impossibile caricare le tue immagini. Controlla la connessione."], "No se pudo guardar la imagen en tu cuenta.": ["Couldn't save the image to your account.", "Das Bild konnte nicht in deinem Konto gespeichert werden.", "Não foi possível salvar a imagem na sua conta.", "Impossible d'enregistrer l'image dans ton compte.", "Impossibile salvare l'immagine nel tuo account."], "Llegaste al límite de 100 imágenes. Borrá alguna en Imágenes para guardar más.": ["You've reached the limit of 100 images. Delete some in Images to save more.", "Du hast das Limit von 100 Bildern erreicht. Lösche einige unter Bilder, um mehr zu speichern.", "Você atingiu o limite de 100 imagens. Apague algumas em Imagens para salvar mais.", "Tu as atteint la limite de 100 images. Supprime-en dans Images pour en enregistrer d'autres.", "Hai raggiunto il limite di 100 immagini. Eliminane qualcuna in Immagini per salvarne altre."], "¿Borrar esta imagen?": ["Delete this image?", "Dieses Bild löschen?", "Apagar esta imagem?", "Supprimer cette image ?", "Eliminare questa immagine?"], "No se pudo borrar la imagen.": ["Couldn't delete the image.", "Das Bild konnte nicht gelöscht werden.", "Não foi possível apagar a imagem.", "Impossible de supprimer l'image.", "Impossibile eliminare l'immagine."], "No se pudo crear la imagen. Probá de nuevo.": ["Couldn't create the image. Try again.", "Das Bild konnte nicht erstellt werden. Versuche es erneut.", "Não foi possível criar a imagem. Tente novamente.", "Impossible de créer l'image. Réessaie.", "Impossibile creare l'immagine. Riprova."], "No llegó ninguna imagen. Probá de nuevo.": ["No image came back. Try again.", "Es kam kein Bild zurück. Versuche es erneut.", "Nenhuma imagem chegou. Tente novamente.", "Aucune image reçue. Réessaie.", "Nessuna immagine ricevuta. Riprova."], "Escribí qué imagen querés después de /imagen.": ["Write which image you want after /imagen.", "Schreibe nach /imagen, welches Bild du möchtest.", "Escreva qual imagem você quer depois de /imagen.", "Écris quelle image tu veux après /imagen.", "Scrivi quale immagine vuoi dopo /imagen."], "Idioma": ["Language", "Sprache", "Idioma", "Langue", "Lingua"], "Fondo": ["Background", "Hintergrund", "Fundo", "Arrière-plan", "Sfondo"], "Negro": ["Black", "Schwarz", "Preto", "Noir", "Nero"], "Grafito": ["Graphite", "Graphit", "Grafite", "Graphite", "Grafite"], "Azul noche": ["Midnight blue", "Nachtblau", "Azul-noite", "Bleu nuit", "Blu notte"], "Bosque": ["Forest", "Wald", "Floresta", "Forêt", "Foresta"], "Violeta": ["Violet", "Violett", "Violeta", "Violet", "Viola"], "Vino": ["Wine", "Wein", "Vinho", "Vin", "Vino"], "Océano": ["Ocean", "Ozean", "Oceano", "Océan", "Oceano"], "Color personalizado": ["Custom color", "Eigene Farbe", "Cor personalizada", "Couleur personnalisée", "Colore personalizzato"], "Subir imagen": ["Upload image", "Bild hochladen", "Enviar imagem", "Importer une image", "Carica immagine"], "Quitar imagen": ["Remove image", "Bild entfernen", "Remover imagem", "Retirer l'image", "Rimuovi immagine"], "Los colores muy claros se oscurecen para que el texto se lea.": ["Very light colors are darkened so the text stays readable.", "Sehr helle Farben werden abgedunkelt, damit der Text lesbar bleibt.", "Cores muito claras são escurecidas para o texto ficar legível.", "Les couleurs très claires sont assombries pour que le texte reste lisible.", "I colori molto chiari vengono scuriti affinché il testo resti leggibile."], "Listo": ["Done", "Fertig", "Pronto", "Terminé", "Fatto"], "Elegí un archivo de imagen.": ["Choose an image file.", "Wähle eine Bilddatei.", "Escolha um arquivo de imagem.", "Choisis un fichier image.", "Scegli un file immagine."], "No se pudo guardar la imagen de fondo. Probá con una más chica.": ["Couldn't save the background image. Try a smaller one.", "Das Hintergrundbild konnte nicht gespeichert werden. Versuche ein kleineres.", "Não foi possível salvar a imagem de fundo. Tente uma menor.", "Impossible d'enregistrer l'image d'arrière-plan. Essaie-en une plus petite.", "Impossibile salvare l'immagine di sfondo. Provane una più piccola."], "Iniciá sesión para usar Cironix.": ["Sign in to use Cironix.", "Melde dich an, um Cironix zu nutzen.", "Entre para usar o Cironix.", "Connecte-toi pour utiliser Cironix.", "Accedi per usare Cironix."], "Tu sesión venció. Volvé a iniciar sesión.": ["Your session expired. Sign in again.", "Deine Sitzung ist abgelaufen. Melde dich erneut an.", "Sua sessão expirou. Entre novamente.", "Ta session a expiré. Reconnecte-toi.", "La tua sessione è scaduta. Accedi di nuovo."], "Llegaste al límite de imágenes por hora. Probá más tarde.": ["You've reached the hourly image limit. Try again later.", "Du hast das Stundenlimit für Bilder erreicht. Versuche es später erneut.", "Você atingiu o limite de imagens por hora. Tente mais tarde.", "Tu as atteint la limite d'images par heure. Réessaie plus tard.", "Hai raggiunto il limite di immagini all'ora. Riprova più tardi."], "Se acabó el cupo gratuito de imágenes de hoy. Probá mañana.": ["Today's free image quota is used up. Try again tomorrow.", "Das kostenlose Bildkontingent für heute ist aufgebraucht. Versuche es morgen erneut.", "A cota gratuita de imagens de hoje acabou. Tente amanhã.", "Le quota gratuit d'images d'aujourd'hui est épuisé. Réessaie demain.", "La quota gratuita di immagini di oggi è esaurita. Riprova domani."], "Las imágenes no están disponibles por un problema de configuración.": ["Images are unavailable due to a configuration problem.", "Bilder sind wegen eines Konfigurationsproblems nicht verfügbar.", "As imagens estão indisponíveis por um problema de configuração.", "Les images sont indisponibles à cause d'un problème de configuration.", "Le immagini non sono disponibili a causa di un problema di configurazione."], "No se pudo crear esa imagen. Probá con otra descripción.": ["Couldn't create that image. Try a different description.", "Dieses Bild konnte nicht erstellt werden. Versuche eine andere Beschreibung.", "Não foi possível criar essa imagem. Tente outra descrição.", "Impossible de créer cette image. Essaie une autre description.", "Impossibile creare questa immagine. Prova con un'altra descrizione."], "Las imágenes todavía no están configuradas.": ["Images aren't set up yet.", "Bilder sind noch nicht eingerichtet.", "As imagens ainda não foram configuradas.", "Les images ne sont pas encore configurées.", "Le immagini non sono ancora configurate."], "Cironix está recibiendo muchos mensajes. Probá de nuevo en un minuto.": ["Cironix is getting a lot of messages. Try again in a minute.", "Cironix erhält viele Nachrichten. Versuche es in einer Minute erneut.", "O Cironix está recebendo muitas mensagens. Tente novamente em um minuto.", "Cironix reçoit beaucoup de messages. Réessaie dans une minute.", "Cironix sta ricevendo molti messaggi. Riprova tra un minuto."]}, "p": [{"re": "^Tenés (\\d+) conversaci(?:ón guardada|ones guardadas) en este navegador\\. ¿Querés guardar(?:la|las) en tu cuenta\\?$", "t": ["You have $1 conversation(s) saved in this browser. Do you want to save them to your account?", "Du hast $1 Unterhaltung(en) in diesem Browser gespeichert. Möchtest du sie in deinem Konto speichern?", "Você tem $1 conversa(s) salva(s) neste navegador. Quer salvá-las na sua conta?", "Tu as $1 conversation(s) enregistrée(s) dans ce navigateur. Veux-tu les enregistrer dans ton compte ?", "Hai $1 conversazione/i salvata/e in questo browser. Vuoi salvarla/e nel tuo account?"]}, {"re": "^Hola, (.+?)\\. Para usar Cironix tenés que aceptar los términos y la política de privacidad\\.$", "t": ["Hi, $1. To use Cironix you need to accept the terms and the privacy policy.", "Hallo, $1. Um Cironix zu nutzen, musst du die Nutzungsbedingungen und die Datenschutzerklärung akzeptieren.", "Olá, $1. Para usar o Cironix, você precisa aceitar os termos e a política de privacidade.", "Salut, $1. Pour utiliser Cironix, tu dois accepter les conditions et la politique de confidentialité.", "Ciao, $1. Per usare Cironix devi accettare i termini e l'informativa sulla privacy."]}, {"re": "^Te mandamos un correo a (.+?)\\. Abrí el enlace para confirmar tu cuenta y después iniciá sesión\\. Si no lo ves, revisá spam\\.$", "t": ["We sent an email to $1. Open the link to confirm your account, then sign in. If you don't see it, check spam.", "Wir haben eine E-Mail an $1 gesendet. Öffne den Link, um dein Konto zu bestätigen, und melde dich dann an. Falls du sie nicht siehst, prüfe den Spam-Ordner.", "Enviamos um e-mail para $1. Abra o link para confirmar sua conta e depois entre. Se não encontrar, verifique o spam.", "Nous avons envoyé un e-mail à $1. Ouvre le lien pour confirmer ton compte, puis connecte-toi. Si tu ne le vois pas, vérifie tes spams.", "Abbiamo inviato un'email a $1. Apri il link per confermare il tuo account, poi accedi. Se non la vedi, controlla lo spam."]}, {"re": "^Borrar conversación: (.+)$", "t": ["Delete conversation: $1", "Unterhaltung löschen: $1", "Apagar conversa: $1", "Supprimer la conversation : $1", "Elimina conversazione: $1"]}, {"re": "^Imagen: (.+?) \\(la imagen está en la sección Imágenes\\)$", "t": ["Image: $1 (the image is in the Images section)", "Bild: $1 (das Bild befindet sich im Bereich Bilder)", "Imagem: $1 (a imagem está na seção Imagens)", "Image : $1 (l'image se trouve dans la section Images)", "Immagine: $1 (l'immagine è nella sezione Immagini)"]}, {"re": "^Abrir imagen: (.+)$", "t": ["Open image: $1", "Bild öffnen: $1", "Abrir imagem: $1", "Ouvrir l'image : $1", "Apri immagine: $1"]}, {"re": "^Te quedan (\\d+) mensajes? hoy$", "t": ["$1 message(s) left today", "Noch $1 Nachricht(en) für heute", "Restam $1 mensagem(ns) hoje", "Il te reste $1 message(s) aujourd'hui", "Ti restano $1 messaggio/i oggi"]}, {"re": "^Te quedan (\\d+) imágenes? hoy$", "t": ["$1 image(s) left today", "Noch $1 Bild(er) für heute", "Restam $1 imagem(ns) hoje", "Il te reste $1 image(s) aujourd'hui", "Ti restano $1 immagine/i oggi"]}, {"re": "^(\\d+) imágenes?( \\(hasta que cierres la página\\))?$", "t": ["$1 image(s)$2", "$1 Bild(er)$2", "$1 imagem(ns)$2", "$1 image(s)$2", "$1 immagine/i$2"]}, {"re": "^Llegaste al límite de (\\d+) mensajes por día\\. Se reinicia a la medianoche \\(hora de Argentina\\)\\.$", "t": ["You've reached the limit of $1 messages per day. It resets at midnight (Argentina time).", "Du hast das Limit von $1 Nachrichten pro Tag erreicht. Es wird um Mitternacht (argentinische Zeit) zurückgesetzt.", "Você atingiu o limite de $1 mensagens por dia. Ele é reiniciado à meia-noite (horário da Argentina).", "Tu as atteint la limite de $1 messages par jour. Elle est réinitialisée à minuit (heure d'Argentine).", "Hai raggiunto il limite di $1 messaggi al giorno. Si azzera a mezzanotte (ora dell'Argentina)."]}, {"re": "^Llegaste al límite de (\\d+) imágenes por día\\. Se reinicia a la medianoche \\(hora de Argentina\\)\\.$", "t": ["You've reached the limit of $1 images per day. It resets at midnight (Argentina time).", "Du hast das Limit von $1 Bildern pro Tag erreicht. Es wird um Mitternacht (argentinische Zeit) zurückgesetzt.", "Você atingiu o limite de $1 imagens por dia. Ele é reiniciado à meia-noite (horário da Argentina).", "Tu as atteint la limite de $1 images par jour. Elle est réinitialisée à minuit (heure d'Argentine).", "Hai raggiunto il limite di $1 immagini al giorno. Si azzera a mezzanotte (ora dell'Argentina)."]}, {"re": "^No se pudo obtener respuesta\\.(.*)$", "t": ["Couldn't get a reply.$1", "Es konnte keine Antwort abgerufen werden.$1", "Não foi possível obter uma resposta.$1", "Impossible d'obtenir une réponse.$1", "Impossibile ottenere una risposta.$1"]}]};
+  const SET_KEY = "cironix.settings", LANG_IDX = { en: 0, de: 1, pt: 2, fr: 3, it: 4 };
+  const PRESETS = [["Negro", "#000000"], ["Grafito", "#1A1B1F"], ["Azul noche", "#0A1630"], ["Bosque", "#0B1D13"], ["Violeta", "#190F2C"], ["Vino", "#2A0D18"], ["Océano", "#062431"]];
+  const TR_ATTRS = ["placeholder", "aria-label", "title", "data-fill"];
+  I18N.p.forEach(function (x) { x.r = new RegExp(x.re); });
+  let settings = { lang: "es", bg: "#000000", img: "" }, lang = "es";
+  try { const s = JSON.parse(localStorage.getItem(SET_KEY) || "{}"); if (s && typeof s === "object") settings = Object.assign(settings, s); } catch (e) {}
+  if (!LANG_IDX.hasOwnProperty(settings.lang) && settings.lang !== "es") settings.lang = "es";
+  lang = settings.lang;
+  function saveSettings() { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); return true; } catch (e) { return false; } }
+
+  function trFull(s) {
+    if (lang === "es" || typeof s !== "string") return null;
+    const k = s.trim(); if (!k) return null;
+    const i = LANG_IDX[lang]; let o = null;
+    if (Object.prototype.hasOwnProperty.call(I18N.d, k)) o = I18N.d[k][i];
+    else for (let j = 0; j < I18N.p.length; j++) {
+      const m = k.match(I18N.p[j].r);
+      if (m) { o = I18N.p[j].t[i].replace(/\$(\d)/g, function (_, n) { return m[n] || ""; }); break; }
+    }
+    if (o == null) return null;
+    return s.match(/^\s*/)[0] + o + s.match(/\s*$/)[0];
+  }
+  window.__cxTr = function (s) { const o = trFull(s); return o == null ? s : o; };
+  const origConfirm = window.confirm.bind(window);
+  window.confirm = function (m) { return origConfirm(window.__cxTr(m)); };
+
+  const TXT = new WeakMap(), ATT = new WeakMap();
+  const SKIP_TXT = ".bubble, .open, #lb-cap, textarea, script, style, [data-notr]";
+  function doText(n) {
+    const p = n.parentElement; if (!p || p.closest(SKIP_TXT)) return;
+    const cur = n.nodeValue, rec = TXT.get(n);
+    if (rec && rec.tr === cur) {
+      const o = lang === "es" ? null : trFull(rec.o), v = o == null ? rec.o : o;
+      if (v !== cur) { rec.tr = v; n.nodeValue = v; }
+      if (v === rec.o) TXT.delete(n);
+      return;
+    }
+    const o = trFull(cur);
+    if (o != null && o !== cur) { TXT.set(n, { o: cur, tr: o }); n.nodeValue = o; } else if (rec) TXT.delete(n);
+  }
+  function doAttrs(el) {
+    if (el.closest && el.closest("[data-notr]") && el.tagName === "SELECT") return;
+    let m = ATT.get(el);
+    for (let i = 0; i < TR_ATTRS.length; i++) {
+      const a = TR_ATTRS[i]; if (!el.hasAttribute(a)) continue;
+      const cur = el.getAttribute(a), rec = m && m[a];
+      if (rec && rec.tr === cur) {
+        const o = lang === "es" ? null : trFull(rec.o), v = o == null ? rec.o : o;
+        if (v !== cur) { rec.tr = v; el.setAttribute(a, v); }
+        if (v === rec.o) delete m[a];
+        continue;
+      }
+      const o = trFull(cur);
+      if (o != null && o !== cur) { if (!m) { m = {}; ATT.set(el, m); } m[a] = { o: cur, tr: o }; el.setAttribute(a, o); } else if (rec) delete m[a];
+    }
+  }
+  function walk(root) {
+    if (root.nodeType === 3) { doText(root); return; }
+    if (root.nodeType !== 1) return;
+    doAttrs(root);
+    const w = document.createTreeWalker(root, 5, null); let n;
+    while ((n = w.nextNode())) { if (n.nodeType === 3) doText(n); else doAttrs(n); }
+  }
+  new MutationObserver(function (list) {
+    if (lang === "es") { let any = false; list.forEach(function () { any = true; }); if (!any) return; }
+    list.forEach(function (r) {
+      if (r.type === "characterData") doText(r.target);
+      else if (r.type === "attributes") doAttrs(r.target);
+      else r.addedNodes.forEach(walk);
+    });
+  }).observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: TR_ATTRS });
+
+  const sLang = document.getElementById("s-lang"), gLang = document.getElementById("gate-lang");
+  function setLang(l) {
+    lang = l; settings.lang = l; document.documentElement.lang = l;
+    sLang.value = l; gLang.value = l;
+    walk(document.body);
+  }
+
+  /* fondo */
+  const dlgSet = document.getElementById("settings"), swEl = document.getElementById("swatches"), sColor = document.getElementById("s-color"),
+        sFile = document.getElementById("s-file"), sNoImg = document.getElementById("s-noimg"), sErr = document.getElementById("s-err");
+  PRESETS.forEach(function (p) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "sw"; b.style.background = p[1];
+    b.setAttribute("aria-label", p[0]); b.setAttribute("title", p[0]); b.dataset.color = p[1];
+    b.addEventListener("click", function () { settings.bg = p[1]; settings.img = ""; commitBg(); });
+    swEl.appendChild(b);
+  });
+  function syncBgUi() {
+    Array.prototype.forEach.call(swEl.children, function (b) { b.classList.toggle("on", !settings.img && b.dataset.color.toLowerCase() === String(settings.bg).toLowerCase()); });
+    sNoImg.hidden = !settings.img; sColor.value = /^#[0-9a-f]{6}$/i.test(settings.bg) ? settings.bg : "#000000";
+  }
+  function commitBg() { sErr.textContent = ""; window.__cxApply(settings); saveSettings(); syncBgUi(); }
+  sColor.addEventListener("input", function () { settings.bg = sColor.value; settings.img = ""; window.__cxApply(settings); syncBgUi(); });
+  sColor.addEventListener("change", commitBg);
+  sNoImg.addEventListener("click", function () { settings.img = ""; commitBg(); });
+  sFile.addEventListener("change", function () {
+    const f = sFile.files && sFile.files[0]; sFile.value = ""; if (!f) return;
+    if (!/^image\//.test(f.type)) { sErr.textContent = window.__cxTr("Elegí un archivo de imagen."); return; }
+    const fail = function () { sErr.textContent = window.__cxTr("No se pudo guardar la imagen de fondo. Probá con una más chica."); };
+    const fr = new FileReader();
+    fr.onerror = fail;
+    fr.onload = function () {
+      const im = new Image();
+      im.onerror = fail;
+      im.onload = function () {
+        try {
+          const k = Math.min(1, 1600 / Math.max(im.width, im.height)), c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k));
+          c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+          const url = c.toDataURL("image/jpeg", 0.78), prev = settings.img;
+          settings.img = url;
+          if (!saveSettings()) { settings.img = prev; fail(); return; }
+          window.__cxApply(settings); syncBgUi(); sErr.textContent = "";
+        } catch (e) { fail(); }
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(f);
+  });
+  function openSettings() { closeSide(); sLang.value = lang; syncBgUi(); sErr.textContent = ""; if (dlgSet.showModal) dlgSet.showModal(); else dlgSet.setAttribute("open", ""); }
+  function closeSettings() { if (dlgSet.close) dlgSet.close(); else dlgSet.removeAttribute("open"); saveSettings(); }
+  document.getElementById("setbtn").addEventListener("click", openSettings);
+  document.getElementById("s-close").addEventListener("click", closeSettings);
+  dlgSet.addEventListener("click", function (e) { if (e.target === dlgSet) closeSettings(); });
+  function onLang(e) { setLang(e.target.value); saveSettings(); }
+  sLang.addEventListener("change", onLang); gLang.addEventListener("change", onLang);
+  window.__cxApply(settings); setLang(settings.lang);
 
   (async function boot() {
     try {
