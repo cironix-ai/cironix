@@ -5,6 +5,7 @@ export function wrap(mod) {
     if (typeof globalThis.process === "undefined") globalThis.process = { env: {} };
     if (!globalThis.process.env) globalThis.process.env = {};
     for (const k in ctx.env) if (typeof ctx.env[k] === "string") globalThis.process.env[k] = ctx.env[k];
+    globalThis.__CX_AI = ctx.env.AI || null;
     const req = ctx.request, headers = {};
     req.headers.forEach(function (v, k) { headers[k] = v; });
     const body = req.method === "GET" || req.method === "HEAD" ? null : await req.text();

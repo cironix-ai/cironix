@@ -9,5 +9,6 @@
     "not_found_handling": "none",
     "run_worker_first": ["/api/*"]
   },
+  "ai": { "binding": "AI" },
   "observability": { "enabled": true }
 }

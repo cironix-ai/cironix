@@ -32,8 +32,9 @@ async function checkUsage(event, kind, max, what) {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return resp(405, { error: "Método no permitido" });
+  const ai = globalThis.__CX_AI; // binding de Workers AI (Cloudflare), si existe
   const acct = (process.env.CF_ACCOUNT_ID || "").trim(), token = (process.env.CF_API_TOKEN || "").trim();
-  if (!acct || !token) return resp(500, { error: "Las imágenes todavía no están configuradas." });
+  if (!ai && (!acct || !token)) return resp(500, { error: "Las imágenes todavía no están configuradas." });
 
   let prompt;
   try { prompt = String(JSON.parse(event.body).prompt || "").trim(); } catch { return resp(400, { error: "Pedido inválido" }); }
@@ -48,6 +49,20 @@ exports.handler = async (event) => {
   if (recent.length >= LIMIT) return resp(429, { error: "Llegaste al límite de imágenes por hora. Probá más tarde." });
   recent.push(now); hits.set(ip, recent);
   if (hits.size > 500) for (const [k, v] of hits) if (!v.some(t => now - t < WINDOW_MS)) hits.delete(k);
+
+  if (ai) {
+    try {
+      const out = await ai.run(MODEL, { prompt, steps: 4 });
+      const img = out && (typeof out === "string" ? out : out.image);
+      if (img) return resp(200, { image: img, remaining: usage.remaining });
+      return resp(502, { error: "No se pudo crear la imagen. Probá de nuevo." });
+    } catch (e) {
+      const m = String(e && e.message || e).toLowerCase();
+      if (m.includes("limit") || m.includes("quota") || m.includes("neurons") || m.includes("4006")) return resp(429, { error: "Se acabó el cupo gratuito de imágenes de hoy. Probá mañana." });
+      if (m.includes("nsfw") || m.includes("flagged")) return resp(422, { error: "No se pudo crear esa imagen. Probá con otra descripción." });
+      return resp(502, { error: "No se pudo crear la imagen. Probá de nuevo." });
+    }
+  }
 
   try {
     const r = await fetch("https://api.cloudflare.com/client/v4/accounts/" + encodeURIComponent(acct) + "/ai/run/" + MODEL, {
