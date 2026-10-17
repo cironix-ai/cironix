@@ -6,14 +6,14 @@ const MODELS = [
 ];
 
 // ---- Límite de uso por persona (se cuenta en Supabase con la sesión de quien pregunta) ----
-const SB_URL = (process.env.SUPABASE_URL || "https://gqsqjrqholfowvidupmk.supabase.co").replace(/\/$/, "");
-const SB_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_eaq_LrViU7bKcBtv2QYoDQ_Xyum-BWK";
+const SB_URL_DEFAULT = "https://gqsqjrqholfowvidupmk.supabase.co", SB_KEY_DEFAULT = "sb_publishable_eaq_LrViU7bKcBtv2QYoDQ_Xyum-BWK";
 
 async function checkUsage(event, kind, max, what) {
   if (process.env.REQUIRE_LOGIN === "false") return { ok: true };
   const h = event.headers || {};
   const m = String(h.authorization || h.Authorization || "").match(/^Bearer\s+(\S+)$/i);
   if (!m) return { status: 401, error: "Iniciá sesión para usar Cironix." };
+  const SB_URL = (process.env.SUPABASE_URL || SB_URL_DEFAULT).replace(/\/$/, ""), SB_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || SB_KEY_DEFAULT;
   let r;
   try {
     r = await fetch(SB_URL + "/rest/v1/rpc/consume_usage", {
@@ -34,7 +34,7 @@ async function checkUsage(event, kind, max, what) {
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return resp(405, { error: "Método no permitido" });
   const key = (process.env.GROQ_API_KEY || "").trim();
-  if (!key) return resp(500, { error: "Falta configurar GROQ_API_KEY en Netlify." });
+  if (!key) return resp(500, { error: "Falta configurar GROQ_API_KEY en el hosting." });
 
   let messages;
   try { messages = JSON.parse(event.body).messages; } catch { return resp(400, { error: "Pedido inválido" }); }

@@ -1033,7 +1033,7 @@ window.__cxApply = function (s) {
     const bot = addBot(); bot.body.textContent = "Creando tu imagen…";
     let ok = false;
     try {
-      const r = await fetch("/.netlify/functions/image", {
+      const r = await fetch("/api/image", {
         method: "POST", headers: await authHeaders(), body: JSON.stringify({ prompt: prompt })
       });
       let data; try { data = await r.json(); } catch (e) { data = {}; }
@@ -1080,7 +1080,7 @@ window.__cxApply = function (s) {
     const bot = addBot();
     let okReply = false;
     try {
-      const r = await fetch("/.netlify/functions/chat", {
+      const r = await fetch("/api/chat", {
         method: "POST", headers: await authHeaders(), body: JSON.stringify({ messages: history })
       });
       let data; try { data = await r.json(); } catch (e) { data = {}; }
