@@ -1,0 +1,13 @@
+{
+  "name": "cironix",
+  "main": "worker.js",
+  "compatibility_date": "2025-10-01",
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": { "enabled": true }
+}
